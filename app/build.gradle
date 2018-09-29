@@ -14,6 +14,16 @@ android {
             cmake {
                 cppFlags "-std=c++11"
             }
+
+            ndk{
+                abiFilters "armeabi-v7a"
+            }
+        }
+        sourceSets{
+            //将so放在libs文件夹下，需要指定这个路径，因为默认路径是jniLibs
+            main{
+                jniLibs.srcDirs=['libs']
+            }
         }
     }
     buildTypes {

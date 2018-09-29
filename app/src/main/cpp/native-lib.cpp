@@ -1,11 +1,10 @@
 #include <jni.h>
-#include <string>
-
+#include "libavcodec/avcodec.h"
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
+    const char * configure = avcodec_configuration();
+    return env->NewStringUTF(configure);
 }

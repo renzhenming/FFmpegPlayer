@@ -208,7 +208,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_play(JNIEnv *env, jobject instance, jstri
             LOGW("读取到结尾处!");
             int pos = 20 * r2d(avFormatContext->streams[videoIndexOfStream]->time_base);
             av_seek_frame(avFormatContext,videoIndexOfStream,pos,AVSEEK_FLAG_BACKWARD|AVSEEK_FLAG_FRAME );
-            continue;
+            break;
         }
 
         AVCodecContext *cc=videoCodecContext;

@@ -37,4 +37,4 @@ add_library( ffmpeg SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/native-lib.c
 
 find_library( log-lib log )
 
-target_link_libraries( ffmpeg avcodec avfilter avformat avutil swresample swscale ${log-lib} )
+target_link_libraries( ffmpeg android avcodec avfilter avformat avutil swresample swscale ${log-lib} )

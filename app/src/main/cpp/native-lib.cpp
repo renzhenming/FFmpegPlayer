@@ -137,7 +137,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
         int read_result = av_read_frame(avFormatContext,avPacket);
         if(read_result != 0){
             //读取到结尾处,从20秒位置继续开始播放
-            LOGI("读取到结尾处");
+            LOGI("读取到结尾处 %s",av_err2str(read_result));
             //跳转到指定的position播放，最后一个参数表示
             //int pos = 200000 * r2d(avFormatContext->streams[videoIndex]->time_base);
             //av_seek_frame(avFormatContext,videoIndex,pos,AVSEEK_FLAG_BACKWARD|AVSEEK_FLAG_FRAME );

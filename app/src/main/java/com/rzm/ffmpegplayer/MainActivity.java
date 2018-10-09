@@ -26,6 +26,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void play(View view) {
-        fFmpegPlayer.play(path,surfaceView.getHolder().getSurface());
+        fFmpegPlayer.playVideo(path,surfaceView.getHolder().getSurface());
     }
 }

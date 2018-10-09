@@ -3,7 +3,7 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,"ffmpeg_player",__VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,"ffmpeg_player_warn",__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_error",__VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"ffmpeg_player_info",__VA_ARGS__)
 
@@ -34,7 +34,9 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
 }
 
 static double r2d(AVRational r) {
+    LOGI("r.num= %lld r.den=%lld",r.num,r.den);
     return r.num==0||r.den == 0 ? 0 :(double)r.num/(double)r.den;
+
 }
 
 //当前时间戳 clock
@@ -44,6 +46,116 @@ long long GetNowMs() {
     int sec = tv.tv_sec%360000;
     long long t = sec*1000+tv.tv_usec/1000;
     return t;
+}
+
+/**
+ * 播放视频，支持本地和网络两种
+ */
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, jstring url_,
+                                                 jobject surface) {
+    const char *url = env->GetStringUTFChars(url_, 0);
+
+    //初始化解封装
+    av_register_all();
+    //初始化全局网络组件，可选推荐使用，在使用网络协议的场景中这是必选的(rtfp http)
+    avformat_network_init();
+
+    AVFormatContext *avFormatContext = NULL;
+    //指定输入的格式，如果为NULL,将自动检测输入格式，所以置为NULL
+    //AVInputFormat *fmt = NULL;
+    //打开输入文件，可以是本地视频或者网络视频
+    int result = avformat_open_input(&avFormatContext,url,NULL,NULL);
+
+    //打开输入内容失败
+    if(result != 0){
+        LOGE("avformat_open_input failed!:%s",av_err2str(result));
+        return;
+    }
+
+    //打开输入成功
+    LOGI("avformat_open_input success!:%s",av_err2str(result));
+
+    //读取媒体文件的分组以获得流信息。这个对于没有标题的文件格式（如MPEG）很有用。这个函数还计算实际的帧率在
+    //MPEG-2重复的情况下帧模式。
+    result = avformat_find_stream_info(avFormatContext,NULL);
+    if (result < 0){
+        LOGE("avformat_find_stream_info failed: %s",av_err2str(result));
+    }
+
+    //获取到了输入文件信息，打印一下视频时长和nb_streams
+    LOGI("duration = %lld nb_streams=%d",avFormatContext->duration,avFormatContext->nb_streams);
+
+    //分离音视频，获取音视频在源文件中的streams index
+    int videoIndex = 0;
+    int audioIndex = 1;
+    int fps = 0;
+    for(int i = 0; i < avFormatContext->nb_streams; i++){
+        AVStream *avStream = avFormatContext->streams[i];
+        if (avStream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO){
+            //找到视频index
+            videoIndex = i;
+            LOGI("video index = %d",videoIndex);
+            //FPS是图像领域中的定义，是指画面每秒传输帧数
+            fps = r2d(avStream->avg_frame_rate);
+
+            LOGI("video info ---- fps = %d fps den= %d fps num= %d width=%d height=%d code id=%d format=%d",
+                 fps,
+                 avStream->avg_frame_rate.den,
+                 avStream->avg_frame_rate.num,
+                 avStream->codecpar->width,
+                 avStream->codecpar->height,
+                 avStream->codecpar->codec_id,
+                 avStream->codecpar->format
+            );
+
+        } else if (avStream->codecpar->codec_type == AVMEDIA_TYPE_AUDIO){
+            //找到音频index
+            audioIndex = i;
+            LOGI("audio index = %d sampe_rate=%d channels=%d sample_format=%d",
+                 audioIndex,
+                 avStream->codecpar->sample_rate,
+                 avStream->codecpar->channels,
+                 avStream->codecpar->format
+            );
+        }
+    }
+
+    //上边通过遍历streams音视频的index,还可以通过提供的接口获取
+    videoIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_VIDEO,-1,-1,NULL,0);
+    audioIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1,NULL,0);
+    LOGI("av_find_best_stream videoIndex=%d audioIndex=%d",videoIndex,audioIndex);
+
+    //读取帧数据
+
+    //Allocate an AVPacket and set its fields to default values
+    AVPacket *avPacket = av_packet_alloc();
+    for (;;) {
+
+        //Return the next frame of a stream.
+        int read_result = av_read_frame(avFormatContext,avPacket);
+        if(read_result != 0){
+            //读取到结尾处,从20秒位置继续开始播放
+            LOGI("读取到结尾处");
+            //跳转到指定的position播放，最后一个参数表示
+            //int pos = 200000 * r2d(avFormatContext->streams[videoIndex]->time_base);
+            //av_seek_frame(avFormatContext,videoIndex,pos,AVSEEK_FLAG_BACKWARD|AVSEEK_FLAG_FRAME );
+            //LOGI("avFormatContext->streams[videoIndex]->time_base= %d",avFormatContext->streams[videoIndex]->time_base);
+            //continue;
+            break;
+        }
+        LOGW("stream = %d size =%d pts=%lld flag=%d pos = %d",
+             avPacket->stream_index,avPacket->size,avPacket->pts,avPacket->flags,avPacket->pos
+        );
+
+        //packet使用完成之后执行，否则内存会急剧增长
+        av_packet_unref(avPacket);
+    }
+
+    //关闭上下文
+    avformat_close_input(&avFormatContext);
+    env->ReleaseStringUTFChars(url_, url);
 }
 
 extern "C"
@@ -111,7 +223,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_play(JNIEnv *env, jobject instance, jstri
     }
 
     //获取音频流信息
-    audioIndexOfStream = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1,NULL,0);
+    //audioIndexOfStream = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1,NULL,0);
     LOGE("av_find_best_stream audioStream = %d",audioIndexOfStream);
 
     //打开视频解码器

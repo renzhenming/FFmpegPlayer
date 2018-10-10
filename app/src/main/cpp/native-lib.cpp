@@ -63,7 +63,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     avformat_network_init();
 
     AVFormatContext *avFormatContext = NULL;
-    //指定输入的格式，如果为NULL,将自动检测输入格式，所以置为NULL
+    //指定输入的格式，如果为NULL,将自动检测输入格式，所以可置为NULL
     //AVInputFormat *fmt = NULL;
     //打开输入文件，可以是本地视频或者网络视频
     int result = avformat_open_input(&avFormatContext,url,NULL,NULL);
@@ -123,13 +123,57 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     }
 
     //上边通过遍历streams音视频的index,还可以通过提供的接口获取
-    videoIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_VIDEO,-1,-1,NULL,0);
-    audioIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1,NULL,0);
+    //videoIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_VIDEO,-1,-1,NULL,0);
+    //audioIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1,NULL,0);
     LOGI("av_find_best_stream videoIndex=%d audioIndex=%d",videoIndex,audioIndex);
 
-    //读取帧数据
+    /***************************************video解码器*********************************************/
+    //找到视频解码器(软解码)
+    AVCodec *videoAVCodec = avcodec_find_decoder(avFormatContext->streams[videoIndex]->codecpar->codec_id);
+    //硬解码
+    //videoAVCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+    if (videoAVCodec == NULL){
+        LOGE("avcodec_find_decoder failed !");
+        return;
+    }
+    //初始化视频解码器上下文对象
+    AVCodecContext *videoCodecContext = avcodec_alloc_context3(videoAVCodec);
+    //根据所提供的编解码器的值填充编解码器上下文参数
+    avcodec_parameters_to_context(videoCodecContext,avFormatContext->streams[videoIndex]->codecpar);
+    //设置视频解码器解码的线程数，解码时将会以你设定的线程进行解码
+    videoCodecContext->thread_count = 1;
+    //打开解码器
+    result = avcodec_open2(videoCodecContext,NULL,NULL);
+    if (result != 0){
+        LOGE("avcodec_open2 video failed!");
+        return;
+    }
+    /***********************************************************************************************/
 
+
+    /***************************************audio解码器*********************************************/
+
+    //找到音频解码器(软解码)
+    AVCodec *audioAVCodec = avcodec_find_decoder(avFormatContext->streams[audioIndex]->codecpar->codec_id);
+    //硬解码
+    //codec = avcodec_find_decoder_by_name("h264_mediacodec");
+    //初始化音频解码器上下文对象
+    AVCodecContext *audioCodecContext = avcodec_alloc_context3(audioAVCodec);
+    //根据所提供的编解码器的值填充编解码器上下文参数
+    avcodec_parameters_to_context(audioCodecContext,avFormatContext->streams[audioIndex]->codecpar);
+    //设置音频解码器解码的线程数，解码时将会以你设定的线程进行解码
+    audioCodecContext->thread_count = 1;
+    //打开音频解码器
+    result = avcodec_open2(audioCodecContext,NULL,NULL);
+    if (result != 0){
+        LOGE("avcodec_open2 audio failed!");
+        return;
+    }
+    /***********************************************************************************************/
+
+    //读取帧数据
     //Allocate an AVPacket and set its fields to default values
+    //存储压缩数据,对于视频，它通常应该包含一个压缩帧。对于音频它可能包含几个压缩帧
     AVPacket *avPacket = av_packet_alloc();
     for (;;) {
 
@@ -150,6 +194,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
         );
 
         //packet使用完成之后执行，否则内存会急剧增长
+        //不再引用这个packet指向的空间，并且将packet置为default状态
         av_packet_unref(avPacket);
     }
 

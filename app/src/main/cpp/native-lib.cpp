@@ -174,7 +174,11 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     //读取帧数据
     //Allocate an AVPacket and set its fields to default values
     //存储压缩数据,对于视频，它通常应该包含一个压缩帧。对于音频它可能包含几个压缩帧
+    //av_packet_free()
     AVPacket *avPacket = av_packet_alloc();
+
+    //av_frame_free() 回收
+    AVFrame *avFrame = av_frame_alloc();
     for (;;) {
 
         //Return the next frame of a stream.
@@ -192,6 +196,33 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
         LOGW("stream = %d size =%d pts=%lld flag=%d pos = %d",
              avPacket->stream_index,avPacket->size,avPacket->pts,avPacket->flags,avPacket->pos
         );
+
+        //解码测试
+        if(avPacket->stream_index != videoIndex){
+            continue;
+        }
+
+        AVCodecContext *codecContext = videoCodecContext;
+        if (avPacket->stream_index == audioIndex){
+            codecContext = audioCodecContext;
+        }
+
+        //将packet发送到解码器中进行解码
+        read_result = avcodec_send_packet(videoCodecContext,avPacket);
+        if (read_result != 0){
+            LOGE("avcodec_send_packet failed!");
+            continue;
+        }
+
+        for(;;){
+            //从解码器中返回的已经解码的数据
+            read_result = avcodec_receive_frame(codecContext,avFrame);
+            if(read_result != 0){
+                //LOGW("avcodec_receive_frame failed!");
+                break;
+            }
+            LOGW("avcodec_receive_frame %lld",avFrame->pts);
+        }
 
         //packet使用完成之后执行，否则内存会急剧增长
         //不再引用这个packet指向的空间，并且将packet置为default状态

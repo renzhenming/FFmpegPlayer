@@ -14,6 +14,5 @@ public class FFmpegPlayer {
     public native void play(String url,Surface handle);
 
     public native void playVideo(String url,Surface surface);
-    public native void playVido(String url,Surface surface);
 
 }

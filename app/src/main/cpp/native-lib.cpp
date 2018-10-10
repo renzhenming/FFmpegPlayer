@@ -1,3 +1,23 @@
+/***************************************************************************************************
+**  neon 单线程下解码视频结果
+**       每秒帧数27~68
+ *       CPU占用16%左右
+ *       内存占用67M左右
+**
+**  neon 八线程下解码视频结果
+**       每秒解码帧数100~170帧
+ *       CPU占用70%左右
+ *       内存占用90M左右
+ *
+ *  neon h264_mediacodec硬解码 设置单线程
+ *       每秒解码帧数46~58，硬解码是一个固定值，这是由于计算误差产生的
+ *       CPU占用3%左右
+ *       内存占用23M左右
+ *
+ *  neon h264_mediacodec硬解码 设置8线程
+ *       每秒解码帧数46~85，线程数对帧率无影响，因为硬解码帧率是固定的
+ *       CPU和内存的占用可忽略不计
+** ************************************************************************************************/
 #include <jni.h>
 #include <android/log.h>
 #include <android/native_window.h>
@@ -46,6 +66,13 @@ long long GetNowMs() {
     int sec = tv.tv_sec%360000;
     long long t = sec*1000+tv.tv_usec/1000;
     return t;
+}
+
+extern "C"
+JNIEXPORT
+jint JNI_OnLoad(JavaVM *vm,void *res){
+    av_jni_set_java_vm(vm,0);
+    return JNI_VERSION_1_4;
 }
 
 /**
@@ -129,9 +156,9 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
 
     /***************************************video解码器*********************************************/
     //找到视频解码器(软解码)
-    AVCodec *videoAVCodec = avcodec_find_decoder(avFormatContext->streams[videoIndex]->codecpar->codec_id);
-    //硬解码
-    //videoAVCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+    //AVCodec *videoAVCodec = avcodec_find_decoder(avFormatContext->streams[videoIndex]->codecpar->codec_id);
+    //硬解码，硬解码需要Jni_OnLoad中做设置否则ffmpeg_player_error: avcodec_open2 video failed!
+    AVCodec *videoAVCodec = avcodec_find_decoder_by_name("h264_mediacodec");
     if (videoAVCodec == NULL){
         LOGE("avcodec_find_decoder failed !");
         return;
@@ -141,11 +168,11 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     //根据所提供的编解码器的值填充编解码器上下文参数
     avcodec_parameters_to_context(videoCodecContext,avFormatContext->streams[videoIndex]->codecpar);
     //设置视频解码器解码的线程数，解码时将会以你设定的线程进行解码
-    videoCodecContext->thread_count = 1;
+    videoCodecContext->thread_count = 8;
     //打开解码器
     result = avcodec_open2(videoCodecContext,NULL,NULL);
     if (result != 0){
-        LOGE("avcodec_open2 video failed!");
+        LOGE("avcodec_open2 video failed! %s",av_err2str(result));
         return;
     }
     /***********************************************************************************************/
@@ -176,10 +203,23 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     //存储压缩数据,对于视频，它通常应该包含一个压缩帧。对于音频它可能包含几个压缩帧
     //av_packet_free()
     AVPacket *avPacket = av_packet_alloc();
-
     //av_frame_free() 回收
     AVFrame *avFrame = av_frame_alloc();
+
+    //********************测试每秒解码帧数代码*******************
+    long long start = GetNowMs();
+    int frameCount = 0;
+    //********************测试每秒解码帧数代码*******************
+
     for (;;) {
+
+        //********************测试每秒解码帧数代码*******************
+        if(GetNowMs() - start >=3000){
+            LOGI("now decode fps is %d",frameCount/3);
+            start = GetNowMs();
+            frameCount = 0;
+        }
+        //********************测试每秒解码帧数代码*******************
 
         //Return the next frame of a stream.
         int read_result = av_read_frame(avFormatContext,avPacket);
@@ -218,9 +258,17 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
             //从解码器中返回的已经解码的数据
             read_result = avcodec_receive_frame(codecContext,avFrame);
             if(read_result != 0){
-                //LOGW("avcodec_receive_frame failed!");
+                LOGE("avcodec_receive_frame failed!");
                 break;
             }
+
+            //********************测试每秒解码帧数代码*******************
+            //说明解码的是视频，
+            if(codecContext == videoCodecContext) {
+                frameCount++;
+            }
+            //********************测试每秒解码帧数代码*******************
+
             LOGW("avcodec_receive_frame %lld",avFrame->pts);
         }
 

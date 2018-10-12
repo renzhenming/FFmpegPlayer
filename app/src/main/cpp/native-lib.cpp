@@ -211,6 +211,12 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     int frameCount = 0;
     //********************测试每秒解码帧数代码*******************
 
+    //像素格式转换的上下文
+    SwsContext *swsContext = NULL;
+    //像素格式转换的输出宽度和高度
+    int destWidth = 1280;
+    int destHeight = 720;
+    char *rgb = new char[1920*1080*4];
     for (;;) {
 
         //********************测试每秒解码帧数代码*******************
@@ -253,6 +259,12 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
             LOGE("avcodec_send_packet failed!");
             continue;
         }
+        //packet使用完成之后执行，否则内存会急剧增长
+        //不再引用这个packet指向的空间，并且将packet置为default状态
+        //avcodec_send_packet执行之后，这个packet对象就已经没有用了，
+        //此时这个packet就像一个壳，他把自己包装的data交给了解码器，
+        //这个壳就没有用了
+        av_packet_unref(avPacket);
 
         for(;;){
             //从解码器中返回的已经解码的数据
@@ -262,21 +274,61 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
                 break;
             }
 
-            //********************测试每秒解码帧数代码*******************
+
             //说明解码的是视频，
             if(codecContext == videoCodecContext) {
+                //*****测试每秒解码帧数代码*******
                 frameCount++;
-            }
-            //********************测试每秒解码帧数代码*******************
+                //*****测试每秒解码帧数代码*******
 
+                //*************************像素格式转换******************************
+                //sws_getContext()  sws_freeContext()
+                swsContext = sws_getCachedContext(
+                        swsContext,
+                        avFrame->width,
+                        avFrame->height,
+                        (AVPixelFormat)avFrame->format,
+                        destWidth,
+                        destHeight,
+                        AV_PIX_FMT_RGBA,
+                        // flag 指定用于重新缩放的算法和选项 SWS_FAST_BILINEAR双线性的
+                        SWS_FAST_BILINEAR,
+                        NULL,NULL,NULL
+                );
+                if (swsContext == NULL){
+                    LOGE("sws_getCachedContext failed!");
+                }
+                uint8_t *data[AV_NUM_DATA_POINTERS] = {0};
+                data[0] =(uint8_t *)rgb;
+                int lines[AV_NUM_DATA_POINTERS] = {0};
+                lines[0] = destWidth * 4;
+                int h = sws_scale(
+                        swsContext,
+                        //输入的源buffer
+                        (const uint8_t **)avFrame->data,
+                        //输入的stride，可以把stride看做每一行的字节数
+                        //对于视频，指每个图片行的字节大小。
+                        //对于音频，指每个平面的字节大小
+                        avFrame->linesize,
+                        //处理的起点位置,0表示从头开始处理
+                        0,
+                        //源的高度
+                        avFrame->height,
+                        //输出的缓冲区buffer
+                        data,
+                        //输出的stride,和输入对应
+                        lines
+
+                );
+                LOGI("sws_scale = %d",h);
+                //*************************像素格式转换******************************
+            }
             LOGW("avcodec_receive_frame %lld",avFrame->pts);
         }
 
-        //packet使用完成之后执行，否则内存会急剧增长
-        //不再引用这个packet指向的空间，并且将packet置为default状态
-        av_packet_unref(avPacket);
-    }
 
+    }
+    delete rgb;
     //关闭上下文
     avformat_close_input(&avFormatContext);
     env->ReleaseStringUTFChars(url_, url);

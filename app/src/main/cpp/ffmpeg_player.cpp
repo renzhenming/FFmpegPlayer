@@ -156,9 +156,9 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
 
     /***************************************video解码器*********************************************/
     //找到视频解码器(软解码)
-    //AVCodec *videoAVCodec = avcodec_find_decoder(avFormatContext->streams[videoIndex]->codecpar->codec_id);
+    AVCodec *videoAVCodec = avcodec_find_decoder(avFormatContext->streams[videoIndex]->codecpar->codec_id);
     //硬解码，硬解码需要Jni_OnLoad中做设置否则ffmpeg_player_error: avcodec_open2 video failed!
-    AVCodec *videoAVCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+    //AVCodec *videoAVCodec = avcodec_find_decoder_by_name("h264_mediacodec");
     if (videoAVCodec == NULL){
         LOGE("avcodec_find_decoder failed !");
         return;
@@ -211,12 +211,49 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     int frameCount = 0;
     //********************测试每秒解码帧数代码*******************
 
+    //*************************像素格式转换******************************
     //像素格式转换的上下文
     SwsContext *swsContext = NULL;
     //像素格式转换的输出宽度和高度
     int destWidth = 1280;
     int destHeight = 720;
     char *rgb = new char[1920*1080*4];
+    //*************************像素格式转换******************************
+
+    //********************音频重采样*****************************
+    char *pcm = new char[48000*4*2];
+
+    SwrContext *swrContext = swr_alloc();
+    //给重采样上下文填充参数
+    swr_alloc_set_opts(
+            swrContext,
+            //输出的channel layout
+            av_get_default_channel_layout(2),
+            //输出的样本格式
+            AV_SAMPLE_FMT_S16,
+            //输出的采样率
+            audioCodecContext->sample_rate,
+
+            //输入的channel layout
+            av_get_default_channel_layout(audioCodecContext->channels),
+            //输入的样本格式
+            audioCodecContext->sample_fmt,
+            //输入的采样率
+            audioCodecContext->sample_rate,
+            NULL,
+            NULL
+
+    );
+    //swr_init(), swr_free()
+    //设置参数之后进行上下文初始化
+    result = swr_init(swrContext);
+    if (result != 0){
+        LOGW("swr_init failed!");
+    } else {
+        LOGW("swr_init success!");
+    }
+    //********************音频重采样*****************************
+
     for (;;) {
 
         //********************测试每秒解码帧数代码*******************
@@ -275,7 +312,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
             }
 
 
-            //说明解码的是视频，
+            //视频
             if(codecContext == videoCodecContext) {
                 //*****测试每秒解码帧数代码*******
                 frameCount++;
@@ -322,6 +359,26 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
                 );
                 LOGI("sws_scale = %d",h);
                 //*************************像素格式转换******************************
+            }else{
+                //音频
+
+                //********************音频重采样*****************************
+                uint8_t *out[2] = {0};
+                out[0] = (uint8_t*) pcm;
+                int len = swr_convert(
+                              swrContext,
+                              //输出缓冲区
+                              out,
+                              //输出一帧音频含有的样本数
+                              avFrame->nb_samples,
+                              //输入的源缓冲区
+                              (const uint8_t**)avFrame->data,
+                              //输入的每帧音频含有的样本数
+                              avFrame->nb_samples
+                );
+
+                LOGI("swr_convert = %d",len);
+                //********************音频重采样*****************************
             }
             LOGW("avcodec_receive_frame %lld",avFrame->pts);
         }
@@ -329,6 +386,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
 
     }
     delete rgb;
+    delete pcm;
     //关闭上下文
     avformat_close_input(&avFormatContext);
     env->ReleaseStringUTFChars(url_, url);

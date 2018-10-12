@@ -33,7 +33,7 @@ set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${FFMPEG_DIR}/libs
 add_library(swscale SHARED IMPORTED)
 set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${FFMPEG_DIR}/libswscale.so)
 
-add_library( ffmpeg SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/native-lib.cpp )
+add_library( ffmpeg SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/ffmpeg_player.cpp )
 
 find_library( log-lib log )
 

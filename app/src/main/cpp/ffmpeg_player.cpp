@@ -88,6 +88,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     av_register_all();
     //初始化全局网络组件，可选推荐使用，在使用网络协议的场景中这是必选的(rtfp http)
     avformat_network_init();
+    //初始化所有的解码器
+    avcodec_register_all();
 
     AVFormatContext *avFormatContext = NULL;
     //指定输入的格式，如果为NULL,将自动检测输入格式，所以可置为NULL
@@ -152,7 +154,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     //上边通过遍历streams音视频的index,还可以通过提供的接口获取
     //videoIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_VIDEO,-1,-1,NULL,0);
     //audioIndex = av_find_best_stream(avFormatContext,AVMEDIA_TYPE_AUDIO,-1,-1,NULL,0);
-    LOGI("av_find_best_stream videoIndex=%d audioIndex=%d",videoIndex,audioIndex);
+    //LOGI("av_find_best_stream videoIndex=%d audioIndex=%d",videoIndex,audioIndex);
 
     /***************************************video解码器*********************************************/
     //找到视频解码器(软解码)
@@ -225,7 +227,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
 
     SwrContext *swrContext = swr_alloc();
     //给重采样上下文填充参数
-    swr_alloc_set_opts(
+    swrContext = swr_alloc_set_opts(
             swrContext,
             //输出的channel layout
             av_get_default_channel_layout(2),
@@ -281,9 +283,9 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
         );
 
         //解码测试
-        if(avPacket->stream_index != videoIndex){
+        /*if(avPacket->stream_index != videoIndex){
             continue;
-        }
+        }*/
 
         AVCodecContext *codecContext = videoCodecContext;
         if (avPacket->stream_index == audioIndex){
@@ -291,11 +293,12 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
         }
 
         //将packet发送到解码器中进行解码
-        read_result = avcodec_send_packet(videoCodecContext,avPacket);
+        read_result = avcodec_send_packet(codecContext,avPacket);
         if (read_result != 0){
-            LOGE("avcodec_send_packet failed!");
+            LOGE("avcodec_send_packet failed! %s",av_err2str(read_result));
             continue;
         }
+        LOGI("avcodec_send_packet success! %s",av_err2str(read_result));
         //packet使用完成之后执行，否则内存会急剧增长
         //不再引用这个packet指向的空间，并且将packet置为default状态
         //avcodec_send_packet执行之后，这个packet对象就已经没有用了，
@@ -304,10 +307,15 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
         av_packet_unref(avPacket);
 
         for(;;){
+            if(codecContext == videoCodecContext){
+                LOGI("begin receive video frame!");
+            }else{
+                LOGI("begin receive audio frame!");
+            }
             //从解码器中返回的已经解码的数据
             read_result = avcodec_receive_frame(codecContext,avFrame);
             if(read_result != 0){
-                LOGE("avcodec_receive_frame failed!");
+                LOGE("avcodec_receive_frame failed! %s",av_err2str(read_result));
                 break;
             }
 
@@ -380,7 +388,6 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
                 LOGI("swr_convert = %d",len);
                 //********************音频重采样*****************************
             }
-            LOGW("avcodec_receive_frame %lld",avFrame->pts);
         }
 
 

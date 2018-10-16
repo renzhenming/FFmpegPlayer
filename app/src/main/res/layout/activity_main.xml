@@ -8,13 +8,13 @@
     android:orientation="vertical"
     tools:context="com.rzm.ffmpegplayer.MainActivity">
 
-    <Button
+    <!--<Button
         android:id="@+id/play"
         android:layout_width="match_parent"
         android:onClick="play"
         android:text="play"
-        android:layout_height="wrap_content" />
-    <SurfaceView
+        android:layout_height="wrap_content" />-->
+    <com.rzm.ffmpegplayer.FFmpegPlayer
         android:id="@+id/surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

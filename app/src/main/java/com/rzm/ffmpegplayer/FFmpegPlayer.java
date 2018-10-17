@@ -21,11 +21,15 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
      * 播放视频
      */
     public native void playVideo(String url,Surface surface);
+    public native void playAudio(String url);
 
     @Override
     public void run() {
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath()+"/1080.mp4";
-        playVideo(path,getHolder().getSurface());
+        String sdPath = Environment.getExternalStorageDirectory().getAbsolutePath();
+        String videoPath = sdPath +"/1080.mp4";
+        String audioPath = sdPath +"/test.pcm";
+        playVideo(videoPath,getHolder().getSurface());
+        playAudio(audioPath);
     }
 
     @Override

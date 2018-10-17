@@ -20,8 +20,14 @@
 ** ************************************************************************************************/
 #include <jni.h>
 #include <android/log.h>
+
+//播放视频
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
+
+//播放音频
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
 
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,"ffmpeg_player_warn",__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_error",__VA_ARGS__)
@@ -413,5 +419,142 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
     delete pcm;
     //关闭上下文
     avformat_close_input(&avFormatContext);
+    env->ReleaseStringUTFChars(url_, url);
+}
+
+void CallBack(SLAndroidSimpleBufferQueueItf bf,void *contex){
+    LOGI("CallBack ....");
+    static FILE *fp = NULL;
+    static char *buf = NULL;
+    if(!buf)
+    {
+        buf = new char[1024*1024];
+    }
+    if(!fp)
+    {
+        fp = fopen("/sdcard/test.pcm","rb");
+    }
+    if(!fp)return;
+    if(feof(fp) == 0)
+    {
+        int len = fread(buf,1,1024,fp);
+        if(len > 0)
+            (*bf)->Enqueue(bf,buf,len);
+    }
+}
+
+/**
+ * 播放音频
+ */
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, jstring url_) {
+    const char *url = env->GetStringUTFChars(url_, 0);
+
+    /***********  1 创建引擎 获取SLEngineItf***************/
+    SLObjectItf slObjectItf;
+    SLEngineItf slEngineItf;
+    //SLresult是unsigned int 类型
+    SLresult result;
+    result = slCreateEngine(&slObjectItf, 0, 0, 0, 0, 0);
+    if (result != SL_RESULT_SUCCESS)
+        return;
+    //SLObjectItf本身是一个指针，*slObjectItf得到的是他的对象
+    result = (*slObjectItf)->Realize(slObjectItf, SL_BOOLEAN_FALSE);
+    if (result != SL_RESULT_SUCCESS)
+        return;
+    result = (*slObjectItf)->GetInterface(slObjectItf, SL_IID_ENGINE, &slEngineItf);
+    if (result != SL_RESULT_SUCCESS)
+        return;
+    if (slEngineItf) {
+        LOGI("get SLEngineItf success");
+    } else {
+        LOGI("get SLEngineItf failed");
+    }
+    /***********         1 创建引擎       ***************/
+
+    /***********  2 创建混音器 ***************/
+    SLObjectItf mixObjectItf = NULL;
+    result = (*slEngineItf)->CreateOutputMix(slEngineItf, &mixObjectItf, 0, 0, 0);
+    if (result != SL_RESULT_SUCCESS) {
+        LOGE("CreateOutputMix failed");
+        return;
+    }else{
+        LOGE("CreateOutputMix success");
+    }
+
+    //实例化混音器
+    result = (*mixObjectItf)->Realize(mixObjectItf,SL_BOOLEAN_FALSE);
+    if(result != SL_RESULT_SUCCESS){
+        LOGE("mixer init failed");
+    }else{
+        LOGI("mixer init success");
+    }
+
+    SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX,mixObjectItf};
+    SLDataSink slDataSink = {&outputMix,0};
+    /***********  2 创建混音器 ***************/
+
+    /***********  3 配置音频信息 ***************/
+    //缓冲队列
+    SLDataLocator_AndroidSimpleBufferQueue queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,10};
+    //音频格式
+    SLDataFormat_PCM pcmFormat = {
+            SL_DATAFORMAT_PCM,
+            //声道数
+            2,
+            SL_SAMPLINGRATE_44_1,
+            SL_PCMSAMPLEFORMAT_FIXED_16,
+            SL_PCMSAMPLEFORMAT_FIXED_16,
+            SL_SPEAKER_FRONT_LEFT|SL_SPEAKER_FRONT_RIGHT,
+            //字节序，小端
+            SL_BYTEORDER_LITTLEENDIAN
+    };
+    SLDataSource slDataSource = {&queue,&pcmFormat};
+    /***********  3 配置音频信息 ***************/
+
+    /************* 4 创建播放器 ****************/
+    const SLInterfaceID ids[] ={SL_IID_BUFFERQUEUE};
+    const SLboolean req[]={SL_BOOLEAN_TRUE};
+    SLObjectItf slPlayerItf = NULL;
+    SLPlayItf slPlayItf;
+    SLAndroidSimpleBufferQueueItf pcmQueue = NULL;
+    result = (*slEngineItf)->CreateAudioPlayer(slEngineItf,&slPlayerItf,&slDataSource,&slDataSink, sizeof(ids)/ sizeof(SLInterfaceID),ids,req);
+    if(result != SL_RESULT_SUCCESS){
+        LOGE("create audio player failed");
+    }else{
+        LOGE("create audio player success");
+    }
+    //初始化播放器
+    result = (*slPlayerItf)->Realize(slPlayerItf,SL_BOOLEAN_FALSE);
+    if(result != SL_RESULT_SUCCESS){
+        LOGE("audio player init failed");
+    }else{
+        LOGE("audio player init success");
+    }
+    //获取player接口
+    result = (*slPlayerItf)->GetInterface(slPlayerItf,SL_IID_PLAY,&slPlayItf);
+    if(result != SL_RESULT_SUCCESS){
+        LOGE("player get SL_IID_PLAY failed");
+    }else{
+        LOGI("player get SL_IID_PLAY success");
+    }
+
+    //获取播放队列接口
+    result = (*slPlayerItf)->GetInterface(slPlayerItf,SL_IID_BUFFERQUEUE,&pcmQueue);
+    if(result != SL_RESULT_SUCCESS){
+        LOGE("player get SL_IID_BUFFERQUEUE failed");
+    }else{
+        LOGI("player get SL_IID_BUFFERQUEUE success");
+    }
+    /************* 4 创建播放器 ****************/
+
+    //设置回调函数
+    (*pcmQueue)->RegisterCallback(pcmQueue,CallBack,0);
+    //设置播放状态
+    (*slPlayItf)->SetPlayState(slPlayItf,SL_PLAYSTATE_PLAYING);
+    //启动队列
+    (*pcmQueue)->Enqueue(pcmQueue,"",1);
+
     env->ReleaseStringUTFChars(url_, url);
 }

@@ -37,4 +37,17 @@ add_library( ffmpeg SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/ffmpeg_playe
 
 find_library( log-lib log )
 
-target_link_libraries( ffmpeg OpenSLES android avcodec avfilter avformat avutil swresample swscale ${log-lib} )
+target_link_libraries( ffmpeg
+                       #播放音频
+                       OpenSLES
+                       #视频shader播放
+                       EGL
+                       GLESv2
+                       android
+                       avcodec
+                       avfilter
+                       avformat
+                       avutil
+                       swresample
+                       swscale
+                       ${log-lib} )

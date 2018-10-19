@@ -518,12 +518,17 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
     SLDataLocator_AndroidSimpleBufferQueue queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 10};
     //音频格式
     SLDataFormat_PCM pcmFormat = {
+            //播放pcm格式的数据
             SL_DATAFORMAT_PCM,
-            //声道数
+            //声道数，两个声道，立体声
             2,
+            //44100Hz的频率
             SL_SAMPLINGRATE_44_1,
+            //位数16位
             SL_PCMSAMPLEFORMAT_FIXED_16,
+            //和位数保持一致
             SL_PCMSAMPLEFORMAT_FIXED_16,
+            //立体声，前左前右
             SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT,
             //字节序，小端
             SL_BYTEORDER_LITTLEENDIAN
@@ -602,7 +607,7 @@ static const char *vertexShader = GET_STR(
         attribute
         vec2 aTexCoord; //材质顶点坐标
         varying
-        vec2 vTexCoord;   //输出的材质坐标
+        vec2 vTexCoord;   //输出的纹理坐标
         void main() {
             vTexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);
             gl_Position = aPosition;
@@ -854,23 +859,27 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance,
 
 
     //加入三维顶点数据 两个三角形组成正方形
+    //顶点坐标系描述了GopenGL的绘制范围，他以绘制中心为原点，在2D图形下，左边界为到x -1，右边界到x 1，上边界到y 1
+    //下边界到y -1,3D下同样道理。定点坐标系就是OpenGL的绘制区间
     static float vers[] = {
-            1.0f, -1.0f, 0.0f,
-            -1.0f, -1.0f, 0.0f,
-            1.0f, 1.0f, 0.0f,
-            -1.0f, 1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,  //右下
+            -1.0f, -1.0f, 0.0f, //左下
+            1.0f, 1.0f, 0.0f,   //右上
+            -1.0f, 1.0f, 0.0f,  //左上
     };
     GLuint apos = (GLuint) glGetAttribLocation(program, "aPosition");
     glEnableVertexAttribArray(apos);
-    //传递顶点
+    //传递顶点 取3个数据,跳转12个字节位(3个数据)再取另外3个数据，这是实现块状数据存储的关键，很多函数里都有这个参数，通常写作int stride
     glVertexAttribPointer(apos, 3, GL_FLOAT, GL_FALSE, 12, vers);
 
-    //加入材质坐标数据
+    //加入纹理坐标数据
+    //纹理坐标的坐标系以纹理左下角为坐标原点，向右为x正轴方向，向上为y轴正轴方向。他的总长度是1。即纹理图片的
+    // 四个角的坐标分别是：(0,0)、(1,0)、(0,1)、(1,1)，分别对应左下、右下、左上、右上四个顶点。
     static float txts[] = {
             1.0f, 0.0f, //右下
-            0.0f, 0.0f,
-            1.0f, 1.0f,
-            0.0, 1.0
+            0.0f, 0.0f, //左下
+            1.0f, 1.0f, //右上
+            0.0, 1.0    //左上
     };
     GLuint atex = (GLuint) glGetAttribLocation(program, "aTexCoord");
     glEnableVertexAttribArray(atex);
@@ -897,80 +906,127 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance,
 
     //创建opengl纹理
     GLuint texts[3] = {0};
-    //创建三个纹理
+    //创建三个纹理对象
+    //在纹理资源使用完毕后(一般是程序退出或场景转换时)，一定要删除纹理对象，释放资源。
+    //glDeleteTextures(Count:Integer;TexObj:Pointer);
     glGenTextures(3, texts);
 
 
 
-    //设置纹理属性
+    //使用glBindTexture将创建的纹理绑定到当前纹理。这样所有的纹理函数都将针对当前纹理。
     glBindTexture(GL_TEXTURE_2D, texts[0]);
-    //缩小的过滤器
+    //设置缩小滤镜
+    /**
+     * 第一个参数表明是针对何种纹理进行设置
+     * 第二个参数表示要设置放大滤镜还是缩小滤镜
+     *
+     * 在纹理映射的过程中，如果图元的大小不等于纹理的大小，OpenGL便会对纹理进行缩放以适应图元的尺寸。
+     * 我们可以通过设置纹理滤镜来决定OpenGL对某个纹理采用的放大、缩小的算法。
+     *
+     * 第三个参数表示使用的滤镜
+     *
+     * 第三个参数可选项如下：
+     *
+     * GL_NEAREST 	取最邻近像素
+     * GL_LINEAR 	线性内部插值
+     * GL_NEAREST_MIPMAP_NEAREST 	最近多贴图等级的最邻近像素
+     * GL_NEAREST_MIPMAP_LINEAR 	在最近多贴图等级的内部线性插值
+     * GL_LINEAR_MIPMAP_NEAREST 	在最近多贴图等级的外部线性插值
+     * GL_LINEAR_MIPMAP_LINEAR 	在最近多贴图等级的外部和内部线性插值
+     *
+     */
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //设置放大滤镜
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //设置纹理的格式和大小
+    //glTexImage2D函数将Pixels数组中的像素值传给当前绑定的纹理对象，于是便创建了纹理，Pixels是最后一个参数
     glTexImage2D(
+            //纹理的类型
             GL_TEXTURE_2D,
-            //细节基本 0默认
+            //纹理的等级 0默认 级的分辨率最大
             0,
             //gpu内部格式 亮度，灰度图
             GL_LUMINANCE,
-            //拉升到全屏
+            //纹理图像的宽度和高度 拉升到全屏
             width, height,
-            //边框
+            //边框大小
             0,
-            //数据的像素格式 亮度，灰度图 要与上面一致
+            //像素数据的格式 亮度，灰度图 要与上面一致
             GL_LUMINANCE,
-            //像素的数据类型
+            //像素值的数据类型
             GL_UNSIGNED_BYTE,
-            //纹理的数据
+            //纹理的数据(像素数据)
             NULL
     );
 
-    //设置纹理属性
+    //使用glBindTexture将创建的纹理绑定到当前纹理。这样所有的纹理函数都将针对当前纹理。
     glBindTexture(GL_TEXTURE_2D, texts[1]);
-    //缩小的过滤器
+    //调用glTexParameter来设置纹理滤镜
+    //设置缩小滤镜
+    /**
+     * 第一个参数表明是针对何种纹理进行设置
+     * 第二个参数表示要设置放大滤镜还是缩小滤镜
+     * 第三个参数表示使用的滤镜
+     *
+     * 第三个参数可选项如下：
+     *
+     * GL_NEAREST 	取最邻近像素
+     * GL_LINEAR 	线性内部插值
+     * GL_NEAREST_MIPMAP_NEAREST 	最近多贴图等级的最邻近像素
+     * GL_NEAREST_MIPMAP_LINEAR 	在最近多贴图等级的内部线性插值
+     * GL_LINEAR_MIPMAP_NEAREST 	在最近多贴图等级的外部线性插值
+     * GL_LINEAR_MIPMAP_LINEAR 	在最近多贴图等级的外部和内部线性插值
+     *
+     * 多贴图纹理(Mip Mapping)为一个纹理对象生成不同尺寸的图像。在需要时，根据绘制图形的大小来决定采用的纹理
+     * 等级或者在不同的纹理等级之间进行线性内插。使用多贴图纹理的好处在于消除纹理躁动。这种情况在所绘制的景物
+     * 离观察者较远时常常发生(如图6.6-1和6.6-2)。由于多贴图纹理现在的渲染速度已经很快，以至于和普通纹理没有
+     * 什么区别，我们现在一般都使用多贴图纹理。
+     */
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //设置放大滤镜
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //设置纹理的格式和大小
+    //glTexImage2D函数将Pixels数组中的像素值传给当前绑定的纹理对象，于是便创建了纹理，Pixels是最后一个参数
     glTexImage2D(
+            //纹理的类型
             GL_TEXTURE_2D,
-            //细节基本 0默认
+            //纹理的等级 0默认 级的分辨率最大
             0,
             //gpu内部格式 亮度，灰度图
             GL_LUMINANCE,
-            //拉升到全屏
-            width/2, height/2,
-            //边框
+            //纹理图像的宽度和高度 拉升到全屏
+            width, height,
+            //边框大小
             0,
-            //数据的像素格式 亮度，灰度图 要与上面一致
+            //像素数据的格式 亮度，灰度图 要与上面一致
             GL_LUMINANCE,
-            //像素的数据类型
+            //像素值的数据类型
             GL_UNSIGNED_BYTE,
-            //纹理的数据
+            //纹理的数据(像素数据)
             NULL
     );
 
-    //设置纹理属性
+    //使用glBindTexture将创建的纹理绑定到当前纹理。这样所有的纹理函数都将针对当前纹理。
     glBindTexture(GL_TEXTURE_2D, texts[2]);
     //缩小的过滤器
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //设置纹理的格式和大小
+    //glTexImage2D函数将Pixels数组中的像素值传给当前绑定的纹理对象，于是便创建了纹理，Pixels是最后一个参数
     glTexImage2D(
+            //纹理的类型
             GL_TEXTURE_2D,
-            //细节基本 0默认
+            //纹理的等级 0默认 级的分辨率最大
             0,
             //gpu内部格式 亮度，灰度图
             GL_LUMINANCE,
-            //拉升到全屏
-            width/2, height/2,
-            //边框
+            //纹理图像的宽度和高度 拉升到全屏
+            width, height,
+            //边框大小
             0,
-            //数据的像素格式 亮度，灰度图 要与上面一致
+            //像素数据的格式 亮度，灰度图 要与上面一致
             GL_LUMINANCE,
-            //像素的数据类型
+            //像素值的数据类型
             GL_UNSIGNED_BYTE,
-            //纹理的数据
+            //纹理的数据(像素数据)
             NULL
     );
     LOGI("glTexImage2D success");

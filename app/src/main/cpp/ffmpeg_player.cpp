@@ -36,6 +36,7 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN,"ffmpeg_player_warn",__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_error",__VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"ffmpeg_player_info",__VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_info",__VA_ARGS__)
 
 //千万记住，ffmpeg是C语言编写的，在C++中使用必须开启开启混合编译，不然会一直报错，
 //undefined reference to 'xxxx'
@@ -456,21 +457,30 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
     const char *url = env->GetStringUTFChars(url_, 0);
 
     /***********  1 创建引擎 获取SLEngineItf***************/
-    SLObjectItf slObjectItf;
-    SLEngineItf slEngineItf;
+
+    //Object是一个资源的抽象集合,可以通过它获取各种资源,所有的Object在OpenSL里面我们拿到的都是一个SLObjectItf
+    SLObjectItf engineObject;
+    //Interface则是方法的集合,例如SLRecordItf里面包含了和录音相关的方法,SLPlayItf包含了和播放相关的方法。
+    // 我们功能都是通过调用Interfaces的方法去实现的
+
+    //SLEngineItf是OpenSL里面最重要的一个Interface,我们可以通过它去创建各种Object,例如播放器、录音器、
+    // 混音器的Object,然后在用这些Object去获取各种Interface去实现各种功能
+    SLEngineItf engineInterface;
     //SLresult是unsigned int 类型
     SLresult result;
-    result = slCreateEngine(&slObjectItf, 0, 0, 0, 0, 0);
+    result = slCreateEngine(&engineObject, 0, 0, 0, 0, 0);
     if (result != SL_RESULT_SUCCESS)
         return;
-    //SLObjectItf本身是一个指针，*slObjectItf得到的是他的对象
-    result = (*slObjectItf)->Realize(slObjectItf, SL_BOOLEAN_FALSE);
+    //创建出来之后必须先调用Realize方法做初始化。在不需要使用的时候调用Destroy方法释放资源
+    result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     if (result != SL_RESULT_SUCCESS)
         return;
-    result = (*slObjectItf)->GetInterface(slObjectItf, SL_IID_ENGINE, &slEngineItf);
+
+    //一个Object里面可能包含了多个Interface,所以GetInterface方法有个SLInterfaceID参数来指定到的需要获取Object里面的那个Interface
+    result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineInterface);
     if (result != SL_RESULT_SUCCESS)
         return;
-    if (slEngineItf) {
+    if (engineInterface) {
         LOGI("get SLEngineItf success");
     } else {
         LOGI("get SLEngineItf failed");
@@ -479,7 +489,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
 
     /***********  2 创建混音器 ***************/
     SLObjectItf mixObjectItf = NULL;
-    result = (*slEngineItf)->CreateOutputMix(slEngineItf, &mixObjectItf, 0, 0, 0);
+    result = (*engineInterface)->CreateOutputMix(engineInterface, &mixObjectItf, 0, 0, 0);
     if (result != SL_RESULT_SUCCESS) {
         LOGE("CreateOutputMix failed");
         return;
@@ -494,12 +504,16 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
     } else {
         LOGI("mixer init success");
     }
-
-    SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, mixObjectItf};
-    SLDataSink slDataSink = {&outputMix, 0};
     /***********  2 创建混音器 ***************/
 
     /***********  3 配置音频信息 ***************/
+
+    SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, mixObjectItf};
+
+    //数据的去处 和SLDataSource是相对的
+    SLDataSink slDataSink = {&outputMix, 0};
+
+
     //缓冲队列
     SLDataLocator_AndroidSimpleBufferQueue queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 10};
     //音频格式
@@ -514,6 +528,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
             //字节序，小端
             SL_BYTEORDER_LITTLEENDIAN
     };
+
+    //数据的来源
     SLDataSource slDataSource = {&queue, &pcmFormat};
     /***********  3 配置音频信息 ***************/
 
@@ -523,7 +539,17 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
     SLObjectItf slPlayerItf = NULL;
     SLPlayItf slPlayItf;
     SLAndroidSimpleBufferQueueItf pcmQueue = NULL;
-    result = (*slEngineItf)->CreateAudioPlayer(slEngineItf, &slPlayerItf, &slDataSource,
+
+    /**
+     * SLEngineItf self,
+	 * SLObjectItf * pPlayer,
+	 * SLDataSource *pAudioSrc, 数据的来源
+	 * SLDataSink *pAudioSnk, 数据的去处
+	 * SLuint32 numInterfaces, 与下面的SLInterfaceID和SLboolean配合使用,用于标记SLInterfaceID数组和SLboolean的大小
+	 * const SLInterfaceID * pInterfaceIds, 这里需要传入一个数组,指定创建的播放器会包含哪些Interface
+	 * const SLboolean * pInterfaceRequired  这里也是一个数组,用来标记每个需要包含的Interface
+     */
+    result = (*engineInterface)->CreateAudioPlayer(engineInterface, &slPlayerItf, &slDataSource,
                                                &slDataSink, sizeof(ids) / sizeof(SLInterfaceID),
                                                ids, req);
     if (result != SL_RESULT_SUCCESS) {
@@ -566,7 +592,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
 }
 
 /**
- * 定点着色器
+ * 定点着色器glsl
+ * #x #可以指定x字符串，这样数组中的字符串就不用加“”
  */
 #define GET_STR(x) #x
 static const char *vertexShader = GET_STR(
@@ -584,48 +611,58 @@ static const char *vertexShader = GET_STR(
 
 //片元着色器,软解码和部分x86硬解码
 static const char *fragYUV420P = GET_STR(
-        precision mediump float;    //精度
-        varying vec2 vTexCoord;     //顶点着色器传递的坐标
-        uniform sampler2D yTexture; //输入的材质（不透明灰度，单像素）
-        uniform sampler2D uTexture;
-        uniform sampler2D vTexture;
-        void main(){
+        precision
+        mediump float;    //精度
+        varying
+        vec2 vTexCoord;     //顶点着色器传递的坐标
+        uniform
+        sampler2D yTexture; //输入的材质（不透明灰度，单像素）
+        uniform
+        sampler2D uTexture;
+        uniform
+        sampler2D vTexture;
+        void main() {
             vec3 yuv;
             vec3 rgb;
-            yuv.r = texture2D(yTexture,vTexCoord).r;
-            yuv.g = texture2D(uTexture,vTexCoord).r - 0.5;
-            yuv.b = texture2D(vTexture,vTexCoord).r - 0.5;
-            rgb = mat3(1.0,     1.0,    1.0,
-                       0.0,-0.39465,2.03211,
-                       1.13983,-0.58060,0.0)*yuv;
+            yuv.r = texture2D(yTexture, vTexCoord).r;
+            yuv.g = texture2D(uTexture, vTexCoord).r - 0.5;
+            yuv.b = texture2D(vTexture, vTexCoord).r - 0.5;
+            rgb = mat3(1.0, 1.0, 1.0,
+                       0.0, -0.39465, 2.03211,
+                       1.13983, -0.58060, 0.0) * yuv;
             //输出像素颜色
-            gl_FragColor = vec4(rgb,1.0);
+            gl_FragColor = vec4(rgb, 1.0);
         }
 );
 
 GLint initShader(const char *code, GLint type) {
     //创建shader
     GLint shader = glCreateShader(type);
-    if(shader == 0){
-        LOGE("glCreateShader %d failed",type);
+    if (shader == 0) {
+        LOGE("glCreateShader %d failed", type);
         return 0;
     }
     //加载shader
-    glShaderSource(shader,1,&code,0);
+    glShaderSource(shader,
+                   1,//shader数量
+                   &code,
+                   0//代码长度
+    );
 
     //编译shader
     glCompileShader(shader);
 
     //获取编译情况
     GLint status;
-    glGetShaderiv(shader,GL_COMPILE_STATUS,&status);
-    if(status == 0){
-        LOGE("glCompileShader %d failed",type);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (status == 0) {
+        LOGE("glCompileShader %d failed", type);
         return 0;
     }
-    LOGI("glCompileShader %d success",type);
+    LOGI("glCompileShader %d success", type);
     return shader;
 }
+
 
 /**
  * OpenGLES (Open Graphics Library for Embedded Systems)适用于手持嵌入式设备，是精简版的OpenGL
@@ -659,6 +696,14 @@ JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance, jstring url_,
                                                   jobject surface) {
     const char *url = env->GetStringUTFChars(url_, 0);
+
+    FILE *fp = fopen(url, "rb");
+    if (!fp) {
+        LOGE("open file %s failed!", url);
+        return;
+    }
+
+    /**************************EGL初始化********************************************/
 
     //1.创建渲染窗口
     ANativeWindow *aNativeWindow = ANativeWindow_fromSurface(env, surface);
@@ -772,13 +817,220 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance,
 
     LOGI("EGL Init Success!");
 
+    /**************************EGL初始化********************************************/
+
+    /**************************shader初始化********************************************/
     //定点shader初始化
-    GLint vshader = initShader(vertexShader,GL_VERTEX_SHADER);
+    GLint vshader = initShader(vertexShader, GL_VERTEX_SHADER);
 
-    //片元shader初始化
-    GLint fshader = initShader(fragYUV420P,GL_FRAGMENT_SHADER);
+    //片元yuv420 shader初始化
+    GLint fshader = initShader(fragYUV420P, GL_FRAGMENT_SHADER);
+    /**************************shader初始化********************************************/
 
+    /**************************渲染程序初始化********************************************/
     //7.使用OpenGL相关的API进行绘制操作。.....
+
+    //创建渲染程序
+    GLint program = glCreateProgram();
+    if (program == 0) {
+        LOGE("glCreateProgram failed!");
+        return;
+    }
+    //渲染程序中加入着色器代码
+    glAttachShader(program, vshader);
+    glAttachShader(program, fshader);
+
+    //链接程序
+    glLinkProgram(program);
+    GLint status = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status != GL_TRUE) {
+        LOGE("glLinkProgram failed!");
+        return;
+    }
+    glUseProgram(program);
+    LOGI("glLinkProgram success!");
+    /////////////////////////////////////////////////////////////
+
+
+    //加入三维顶点数据 两个三角形组成正方形
+    static float vers[] = {
+            1.0f, -1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f,
+    };
+    GLuint apos = (GLuint) glGetAttribLocation(program, "aPosition");
+    glEnableVertexAttribArray(apos);
+    //传递顶点
+    glVertexAttribPointer(apos, 3, GL_FLOAT, GL_FALSE, 12, vers);
+
+    //加入材质坐标数据
+    static float txts[] = {
+            1.0f, 0.0f, //右下
+            0.0f, 0.0f,
+            1.0f, 1.0f,
+            0.0, 1.0
+    };
+    GLuint atex = (GLuint) glGetAttribLocation(program, "aTexCoord");
+    glEnableVertexAttribArray(atex);
+    glVertexAttribPointer(atex, 2, GL_FLOAT, GL_FALSE, 8, txts);
+
+    LOGI("glVertexAttribPointer success");
+    /**************************渲染程序传递数据********************************************/
+
+    /**************************纹理设置********************************************/
+    int width = 176;
+    int height = 144;
+
+    width = 352;
+    height = 288;
+    //材质纹理初始化
+    //设置纹理层
+
+    //对于纹理第1层
+    glUniform1i(glGetUniformLocation(program, "yTexture"), 0);
+    //对于纹理第2层
+    glUniform1i(glGetUniformLocation(program, "uTexture"), 1);
+    //对于纹理第3层
+    glUniform1i(glGetUniformLocation(program, "vTexture"), 2);
+
+    //创建opengl纹理
+    GLuint texts[3] = {0};
+    //创建三个纹理
+    glGenTextures(3, texts);
+
+
+
+    //设置纹理属性
+    glBindTexture(GL_TEXTURE_2D, texts[0]);
+    //缩小的过滤器
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //设置纹理的格式和大小
+    glTexImage2D(
+            GL_TEXTURE_2D,
+            //细节基本 0默认
+            0,
+            //gpu内部格式 亮度，灰度图
+            GL_LUMINANCE,
+            //拉升到全屏
+            width, height,
+            //边框
+            0,
+            //数据的像素格式 亮度，灰度图 要与上面一致
+            GL_LUMINANCE,
+            //像素的数据类型
+            GL_UNSIGNED_BYTE,
+            //纹理的数据
+            NULL
+    );
+
+    //设置纹理属性
+    glBindTexture(GL_TEXTURE_2D, texts[1]);
+    //缩小的过滤器
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //设置纹理的格式和大小
+    glTexImage2D(
+            GL_TEXTURE_2D,
+            //细节基本 0默认
+            0,
+            //gpu内部格式 亮度，灰度图
+            GL_LUMINANCE,
+            //拉升到全屏
+            width/2, height/2,
+            //边框
+            0,
+            //数据的像素格式 亮度，灰度图 要与上面一致
+            GL_LUMINANCE,
+            //像素的数据类型
+            GL_UNSIGNED_BYTE,
+            //纹理的数据
+            NULL
+    );
+
+    //设置纹理属性
+    glBindTexture(GL_TEXTURE_2D, texts[2]);
+    //缩小的过滤器
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //设置纹理的格式和大小
+    glTexImage2D(
+            GL_TEXTURE_2D,
+            //细节基本 0默认
+            0,
+            //gpu内部格式 亮度，灰度图
+            GL_LUMINANCE,
+            //拉升到全屏
+            width/2, height/2,
+            //边框
+            0,
+            //数据的像素格式 亮度，灰度图 要与上面一致
+            GL_LUMINANCE,
+            //像素的数据类型
+            GL_UNSIGNED_BYTE,
+            //纹理的数据
+            NULL
+    );
+    LOGI("glTexImage2D success");
+
+
+    /**************************纹理设置********************************************/
+    unsigned char *buf[3] = {0};
+    buf[0] = new unsigned char[width * height];
+    buf[1] = new unsigned char[width * height / 4];
+    buf[2] = new unsigned char[width * height / 4];
+
+    for (int i = 0; i < 10000; i++) {
+        //memset(buf[0],i,width*height);
+        // memset(buf[1],i,width*height/4);
+        //memset(buf[2],i,width*height/4);
+
+        //420p   yyyyyyyy uu vv
+        if (feof(fp) == 0) {
+            //yyyyyyyy
+            fread(buf[0], 1, width * height, fp);
+            fread(buf[1], 1, width * height / 4, fp);
+            fread(buf[2], 1, width * height / 4, fp);
+        }
+
+
+
+
+        //激活第1层纹理,绑定到创建的opengl纹理
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texts[0]);
+        //替换纹理内容
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE,
+                        buf[0]);
+
+
+        //激活第2层纹理,绑定到创建的opengl纹理
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_2D, texts[1]);
+        //替换纹理内容
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_LUMINANCE,
+                        GL_UNSIGNED_BYTE, buf[1]);
+
+        //激活第2层纹理,绑定到创建的opengl纹理
+        glActiveTexture(GL_TEXTURE0 + 2);
+        glBindTexture(GL_TEXTURE_2D, texts[2]);
+        //替换纹理内容
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_LUMINANCE,
+                        GL_UNSIGNED_BYTE, buf[2]);
+
+
+
+        //三维绘制
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        //窗口显示
+        eglSwapBuffers(eglDisplay, eglSurface);
+
+    }
+    /**************************纹理显示********************************************/
+    LOGI("eglSwapBuffers success");
     env->ReleaseStringUTFChars(url_, url);
 }
 

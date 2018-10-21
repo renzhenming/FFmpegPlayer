@@ -33,7 +33,7 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
         String yuvPath2 = sdPath +"/176x144.yuv";
         String yuvPath3 = sdPath +"/352x288.yuv";
         String yuvPath4 = sdPath +"/352x288_2.yuv";
-        initOpenGL(yuvPath4,getHolder().getSurface());
+        initOpenGL(yuvPath3,getHolder().getSurface());
         //playVideo(videoPath,getHolder().getSurface());
         //playAudio(audioPath);
     }

@@ -16,12 +16,19 @@ public class MainActivity extends AppCompatActivity {
     static {
         System.loadLibrary("ffmpeg");
     }
+
+    public native void stringFromJNI();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
+
+        stringFromJNI();
+
+
         FFmpegPlayer player = (FFmpegPlayer) findViewById(R.id.surface);
 
         //目前在红米note5上不加render无法播放，在360n5s上可以正常播放

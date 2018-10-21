@@ -55,12 +55,18 @@ extern "C" {
 };
 
 
+
+#include "FFDemux.h"
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
         JNIEnv *env,
         jobject /* this */) {
     const char *configure = avcodec_configuration();
+
+    IDemux *de = new FFDemux();
+    de->Open("/sdcard/1080.mp4");
+
     return env->NewStringUTF(configure);
 }
 

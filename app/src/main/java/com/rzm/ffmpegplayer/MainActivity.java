@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         stringFromJNI();
 
 
-        FFmpegPlayer player = (FFmpegPlayer) findViewById(R.id.surface);
+        /*FFmpegPlayer player = (FFmpegPlayer) findViewById(R.id.surface);*/
 
         //目前在红米note5上不加render无法播放，在360n5s上可以正常播放
         /*player.setRenderer(new GLSurfaceView.Renderer() {

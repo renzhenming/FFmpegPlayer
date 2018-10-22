@@ -66,6 +66,13 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
 
     IDemux *de = new FFDemux();
     de->Open("/sdcard/1080.mp4");
+    for(;;){
+        XData data = de->Read();
+        LOGI("XPlay Read data size is %d",data.size);
+        if (data.size == 0){
+            break;
+        }
+    }
 
     return env->NewStringUTF(configure);
 }

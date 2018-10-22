@@ -59,6 +59,8 @@ extern "C" {
 #include "FFDemux.h"
 #include "IObserver.h"
 #include "XLog.h"
+#include "IDecode.h"
+#include "FFDecode.h"
 
 //继承的时候，这个public表示IObserver中的属性或方法对子类TestObserver是public
 class TestObserver :public IObserver{
@@ -92,6 +94,11 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
     de->Start();
     XSleep(5000);
     de->Stop();
+
+    IDecode *decode = new FFDecode();
+    /*decode->Start();
+    decode->Open()
+    decode->Stop();*/
     return env->NewStringUTF(configure);
 }
 

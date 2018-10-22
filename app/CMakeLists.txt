@@ -35,11 +35,14 @@ set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${FFMPEG_DIR}/libswsc
 
 add_library( ffmpeg
              SHARED
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XThread.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/ffmpeg_player.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IDemux.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/FFDemux.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XData.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XLog.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IObserver.cpp
+
 )
 
 find_library( log-lib log )

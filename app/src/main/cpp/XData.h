@@ -4,6 +4,8 @@
 struct XData {
     unsigned char *data = 0;
     int size = 0;
+    bool isAudio = false;
+    bool isVideo = false;
     void Drop();
 };
 

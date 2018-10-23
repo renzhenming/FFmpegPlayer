@@ -62,14 +62,6 @@ extern "C" {
 #include "IDecode.h"
 #include "FFDecode.h"
 
-//继承的时候，这个public表示IObserver中的属性或方法对子类TestObserver是public
-class TestObserver :public IObserver{
-public:
-    void Update(XData data){
-        XLOGI("TestObs Update data size is %d",data.size);
-    }
-};
-
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
@@ -77,28 +69,27 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
         jobject /* this */) {
     const char *configure = avcodec_configuration();
 
-    /*IDemux *de = new FFDemux();
-    de->Open("/sdcard/1080.mp4");
-    for(;;){
-        XData data = de->Read();
-        LOGI("XPlay Read data size is %d",data.size);
-        if (data.size == 0){
-            break;
-        }
-    }*/
-    TestObserver *testObserver = new TestObserver();
-    IDemux *de = new FFDemux();
-    de->AddObserver(testObserver);
-    de->Open("/sdcard/1080.mp4");
+    IDemux *demux = new FFDemux();
+    demux->Open("/sdcard/1080.mp4");
 
-    de->Start();
+
+
+    IDecode *videoDecode = new FFDecode();
+    videoDecode->Open(demux->GetVParam());
+
+    IDecode *audioDecode = new FFDecode();
+    audioDecode->Open(demux->GetAParam());
+
+    demux->AddObserver(videoDecode);
+    demux->AddObserver(audioDecode);
+
+    demux->Start();
+    videoDecode->Start();
+    audioDecode->Start();
+
+    /*demux->Start();
     XSleep(5000);
-    de->Stop();
-
-    IDecode *decode = new FFDecode();
-    /*decode->Start();
-    decode->Open()
-    decode->Stop();*/
+    demux->Stop();*/
     return env->NewStringUTF(configure);
 }
 

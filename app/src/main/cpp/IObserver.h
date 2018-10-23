@@ -1,9 +1,9 @@
 #ifndef FFMPEG_XOBSERVER_H
 #define FFMPEG_XOBSERVER_H
 
+#include <vector>
+#include <mutex>
 #include "XData.h"
-#include "vector"
-#include "mutex"
 #include "XThread.h"
 
 class IObserver : public XThread{

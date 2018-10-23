@@ -4,13 +4,23 @@
 #include "IDecode.h"
 
 struct AVCodecContext;
-
+struct AVFrame;
+//继承的时候，这个public表示IObserver中的属性或方法对子类TestObserver是public
 class FFDecode : public IDecode{
 public:
+
+    //打开解码器
     virtual bool Open(XParameter xParameter);
+
+    //future模型 发送数据到线程解码
+    virtual bool SendPacket(XData packet);
+
+    //从线程中获取解码结果
+    virtual XData RecvFrame();
 
 protected:
     AVCodecContext *avCodecContext = 0;
+    AVFrame *frame = 0;
 };
 
 #endif

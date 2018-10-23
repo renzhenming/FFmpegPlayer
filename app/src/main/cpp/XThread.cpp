@@ -4,6 +4,8 @@
 
 //这两个是结合使用
 #include <thread>
+#include <chrono>
+
 using namespace std;
 
 void XSleep(int mis){

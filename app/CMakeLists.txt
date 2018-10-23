@@ -43,6 +43,7 @@ add_library( ffmpeg
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XLog.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IObserver.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/FFDecode.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IDecode.cpp
 
 )
 

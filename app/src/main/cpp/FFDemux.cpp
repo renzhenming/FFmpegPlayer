@@ -6,6 +6,9 @@ extern "C"{
 #include "libavformat/avformat.h"
 }
 
+/**
+ * 初始化FFmpeg
+ */
 FFDemux::FFDemux(){
     static bool isFirst = true;
     if(isFirst){
@@ -23,7 +26,11 @@ FFDemux::FFDemux(){
         XLOGI("ffmpeg register success");
     }
 }
-//打开文件，或者流媒体 rmtp http rtsp
+/**
+ * 打开文件，或者流媒体 rmtp http rtsp
+ * @param url
+ * @return
+ */
 bool FFDemux::Open(const char *url){
 
     //打开视频文件
@@ -49,7 +56,9 @@ bool FFDemux::Open(const char *url){
     XLOGI("FFDemux avformat_find_stream_info %s success!totalMs =%d",url,totalMs);
     return true;
 };
-//读取一帧数据，数据由调用者清理
+/**
+ * 解码一帧数据，数据由调用者清理
+ */
 XData FFDemux::Read(){
     if(!avFormatContext)
         return XData();
@@ -60,7 +69,7 @@ XData FFDemux::Read(){
         av_packet_free(&avPacket);
         return XData();
     }
-    XLOGI("pack size is %d ptss %lld",avPacket->size,avPacket->pts);
+    //XLOGI("pack size is %d ptss %lld",avPacket->size,avPacket->pts);
     //为什么*avPacket可以强转成unsigned char*？TODO
     d.data = (unsigned char*)avPacket;
     d.size = avPacket->size;

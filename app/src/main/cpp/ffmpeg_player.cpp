@@ -57,6 +57,17 @@ extern "C" {
 
 
 #include "FFDemux.h"
+#include "IObserver.h"
+#include "XLog.h"
+
+//继承的时候，这个public表示IObserver中的属性或方法对子类TestObserver是public
+class TestObserver :public IObserver{
+public:
+    void Update(XData data){
+        XLOGI("TestObs Update data size is %d",data.size);
+    }
+};
+
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
@@ -64,7 +75,7 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
         jobject /* this */) {
     const char *configure = avcodec_configuration();
 
-    IDemux *de = new FFDemux();
+    /*IDemux *de = new FFDemux();
     de->Open("/sdcard/1080.mp4");
     for(;;){
         XData data = de->Read();
@@ -72,8 +83,15 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
         if (data.size == 0){
             break;
         }
-    }
+    }*/
+    TestObserver *testObserver = new TestObserver();
+    IDemux *de = new FFDemux();
+    de->AddObserver(testObserver);
+    de->Open("/sdcard/1080.mp4");
 
+    de->Start();
+    XSleep(5000);
+    de->Stop();
     return env->NewStringUTF(configure);
 }
 
@@ -436,8 +454,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
 
     }
     av_frame_free(&avFrame);
-    delete rgb;
-    delete pcm;
+    delete []rgb;
+    delete []pcm;
     //关闭上下文
     avformat_close_input(&avFormatContext);
     env->ReleaseStringUTFChars(url_, url);

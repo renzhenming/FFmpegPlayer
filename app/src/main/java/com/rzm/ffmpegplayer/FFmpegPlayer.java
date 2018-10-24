@@ -26,22 +26,26 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
 
     @Override
     public void run() {
-        String sdPath = Environment.getExternalStorageDirectory().getAbsolutePath();
-        String videoPath = sdPath +"/1080.mp4";
-        String audioPath = sdPath +"/test.pcm";
-        String yuvPath = sdPath +"/out.yuv";
-        String yuvPath2 = sdPath +"/176x144.yuv";
-        String yuvPath3 = sdPath +"/352x288.yuv";
-        String yuvPath4 = sdPath +"/352x288_2.yuv";
-        initOpenGL(yuvPath3,getHolder().getSurface());
+        //String sdPath = Environment.getExternalStorageDirectory().getAbsolutePath();
+        //String videoPath = sdPath +"/1080.mp4";
+        //String audioPath = sdPath +"/test.pcm";
+        //String yuvPath = sdPath +"/out.yuv";
+        //String yuvPath2 = sdPath +"/176x144.yuv";
+        //String yuvPath3 = sdPath +"/352x288.yuv";
+        //String yuvPath4 = sdPath +"/352x288_2.yuv";
+        //initOpenGL(yuvPath3,getHolder().getSurface());
         //playVideo(videoPath,getHolder().getSurface());
         //playAudio(audioPath);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        new Thread( this ).start();
+        //new Thread( this ).start();
+        //初始化opengl egl 显示
+        initView(holder.getSurface());
     }
+
+    private native void initView(Surface surface);
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {

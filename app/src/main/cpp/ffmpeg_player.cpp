@@ -61,6 +61,15 @@ extern "C" {
 #include "XLog.h"
 #include "IDecode.h"
 #include "FFDecode.h"
+#include "XEGL.h"
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
+
+    ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
+    XEGL::Get()->Init(window);
+}
 
 extern "C"
 JNIEXPORT jstring JNICALL
@@ -1118,41 +1127,3 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance,
     LOGI("eglSwapBuffers success");
     env->ReleaseStringUTFChars(url_, url);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

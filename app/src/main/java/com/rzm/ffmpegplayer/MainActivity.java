@@ -13,11 +13,6 @@ public class MainActivity extends AppCompatActivity {
     private Button play;
     private FFmpegPlayer fFmpegPlayer;
     private String path;
-    static {
-        System.loadLibrary("ffmpeg");
-    }
-
-    public native void stringFromJNI();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,9 +20,6 @@ public class MainActivity extends AppCompatActivity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-
-        stringFromJNI();
-
 
         /*FFmpegPlayer player = (FFmpegPlayer) findViewById(R.id.surface);*/
 

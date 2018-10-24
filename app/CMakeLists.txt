@@ -44,6 +44,11 @@ add_library( ffmpeg
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IObserver.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/FFDecode.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IDecode.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IVideoView.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/GLVideoView.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XEGL.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XShader.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XTexture.cpp
 
 )
 

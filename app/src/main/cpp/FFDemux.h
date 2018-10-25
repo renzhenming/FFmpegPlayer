@@ -3,7 +3,6 @@
 
 #include "IDemux.h"
 
-//为什么可以不用引入头文件，直接定义？TODO
 struct AVFormatContext;
 
 class FFDemux : public IDemux {

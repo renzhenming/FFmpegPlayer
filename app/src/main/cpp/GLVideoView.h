@@ -5,8 +5,19 @@
 #ifndef FFMPEGPLAYER_GLVIDEOVIEW_H
 #define FFMPEGPLAYER_GLVIDEOVIEW_H
 
-class GLVideoView{
+#include "XData.h"
+#include "IVideoView.h"
 
+class XTexture;
+
+class GLVideoView : public IVideoView{
+public:
+    virtual void SetRender(void *window);
+    virtual void Render(XData data);
+
+protected:
+    void *view = 0;
+    XTexture *texture = 0;
 };
 
 #endif //FFMPEGPLAYER_GLVIDEOVIEW_H

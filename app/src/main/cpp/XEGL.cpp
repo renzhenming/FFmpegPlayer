@@ -77,6 +77,14 @@ public:
         XLOGI("eglMakeCurrent success!");
         return true;
     }
+
+    virtual void Draw() {
+        if(display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE)
+        {
+            return;
+        }
+        eglSwapBuffers(display,surface);
+    }
 };
 
 //创建对象的单利模式

@@ -23,6 +23,7 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
     public native void playVideo(String url,Surface surface);
     public native void playAudio(String url);
     public native void initOpenGL(String url,Surface surface);
+    public native void stringFromJNI();
 
     @Override
     public void run() {
@@ -42,7 +43,10 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
     public void surfaceCreated(SurfaceHolder holder) {
         //new Thread( this ).start();
         //初始化opengl egl 显示
-        initView(holder.getSurface());
+
+        //stringFromJNI();
+        //initView(holder.getSurface());
+
     }
 
     private native void initView(Surface surface);

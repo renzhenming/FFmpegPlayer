@@ -63,28 +63,51 @@ extern "C" {
 #include "FFDecode.h"
 #include "XEGL.h"
 #include "XShader.h"
+#include "IVideoView.h"
+#include "GLVideoView.h"
+
+IVideoView *view = NULL;
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
 
     ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
-    XEGL::Get()->Init(window);
-    XShader shader;
-    shader.Init();
+    view->SetRender(window);
 }
-
 extern "C"
-JNIEXPORT jstring JNICALL
-Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    const char *configure = avcodec_configuration();
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_stringFromJNI(JNIEnv *env, jobject instance) {
 
     IDemux *demux = new FFDemux();
     demux->Open("/sdcard/1080.mp4");
 
+    IDecode *videoDecode = new FFDecode();
+    videoDecode->Open(demux->GetVParam());
 
+    IDecode *audioDecode = new FFDecode();
+    audioDecode->Open(demux->GetAParam());
+
+    /*demux->AddObserver(videoDecode);
+    demux->AddObserver(audioDecode);
+
+    view = new GLVideoView();
+    videoDecode->AddObserver(view);
+
+    demux->Start();
+    videoDecode->Start();
+    audioDecode->Start();*/
+
+    /*demux->Start();
+    XSleep(5000);
+    demux->Stop();*/
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(JNIEnv *env, jobject instance) {
+
+    IDemux *demux = new FFDemux();
+    demux->Open("/sdcard/1080.mp4");
 
     IDecode *videoDecode = new FFDecode();
     videoDecode->Open(demux->GetVParam());
@@ -95,16 +118,27 @@ Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(
     demux->AddObserver(videoDecode);
     demux->AddObserver(audioDecode);
 
+    view = new GLVideoView();
+    videoDecode->AddObserver(view);
+
     demux->Start();
     videoDecode->Start();
     audioDecode->Start();
 
+    /*demux->AddObserver(videoDecode);
+    demux->AddObserver(audioDecode);
+
+    //view = new GLVideoView();
+    //videoDecode->AddObserver(view);
+
+    demux->Start();
+    videoDecode->Start();
+    audioDecode->Start();*/
+
     /*demux->Start();
     XSleep(5000);
     demux->Stop();*/
-    return env->NewStringUTF(configure);
 }
-
 static double r2d(AVRational r) {
     LOGI("r.num= %lld r.den=%lld", r.num, r.den);
     return r.num == 0 || r.den == 0 ? 0 : (double) r.num / (double) r.den;

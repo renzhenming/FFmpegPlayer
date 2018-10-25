@@ -11,6 +11,8 @@ public:
 
     static XEGL * Get();
 
+    virtual void Draw() = 0;
+
 protected:
     //单利模式，将构造方法设置为非public类型
     XEGL(){}

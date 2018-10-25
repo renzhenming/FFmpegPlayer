@@ -6,9 +6,12 @@ void IDemux::Main() {
         XData d = Read();
         //XLOGI("IDemux Read %d",d.size);
         //if(d.size<=0)break;
-        if (d.size>0)
+        if (d.size>0){
             Notify(d);
-        else
-            XLOGI("IDemux Read result is 0");
+            XLOGI("demux data.size:%d",d.size);
+        } else{
+            XLOGI("demux reach the end break");
+            break;
+        }
     }
 }

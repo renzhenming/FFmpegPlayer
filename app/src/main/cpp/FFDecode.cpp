@@ -11,7 +11,10 @@ extern "C"{
  * @return
  */
 bool FFDecode ::Open(XParameter xParameter) {
-    if (!xParameter.avCodecParameters) return false;
+    if (!xParameter.avCodecParameters) {
+        XLOGE("FFDecode failed!CodecParameters is null");
+        return false;
+    }
     AVCodecParameters *avCodecParameters = xParameter.avCodecParameters;
 
     //获取解码器
@@ -104,11 +107,15 @@ XData FFDecode ::RecvFrame(){
         //视频size计算方法0 1 2 分别对应yuv,三者相加相当于一行的size 乘以高度
 
         data.size = (frame->linesize[0]+frame->linesize[1]+frame->linesize[2])*frame->height;
+        data.width = frame->width;
+        data.height = frame->height;
     }else if(avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO){
 
         //音频size计算方法 ： 样本字节数 * 单通道样本数 * 通道数
         data.size = av_get_bytes_per_sample((AVSampleFormat)frame->format)*frame->nb_samples*2;
     }
+
+    memcpy(data.datas,frame->data, sizeof(data.datas));
 
     return data;
 }

@@ -52,7 +52,6 @@ static const char *fragYUV420P = GET_STR(
 
 );
 
-
 static GLuint InitShader(const char *code,GLint type){
     //创建shader
     GLuint shader = glCreateShader(type);
@@ -87,13 +86,70 @@ bool XShader::Init(){
     }
     XLOGI("init GL_VERTEX_SHADER success!");
 
-    //初始化材质着色器yuv420
+    //初始化片元着色器yuv420
     fsh = InitShader(fragYUV420P,GL_FRAGMENT_SHADER);
     if(vertexShader == 0){
         XLOGE("init GL_FRAGMENT_SHADER failed!");
         return false;
     }
     XLOGI("init GL_FRAGMENT_SHADER success!");
+
+    //创建渲染程序
+    program = glCreateProgram();
+    if(program == 0){
+        XLOGE("glCreateProgram failed!");
+        return false;
+    }
+    XLOGI("glCreateProgram success!");
+
+    //渲染程序种加入着色器代码
+    glAttachShader(program,vsh);
+    glAttachShader(program,fsh);
+
+    //链接程序
+    glLinkProgram(program);
+
+    //判断链接结果
+    GLint status;
+    glGetProgramiv(program,GL_LINK_STATUS,&status);
+    if(status != GL_TRUE){
+        XLOGE("glLinkProgram failed!");
+        return false;
+    }
+    glUseProgram(program);
+    XLOGI("glLinkProgram success!");
+
+    //加入三维顶点数据 两个三角形组成正方形
+    static float vers[]={
+            1.0f,-1.0f,0.0f,
+            -1.0f,-1.0f,0.0f,
+            -1.0f,1.0f,0.0f,
+            1.0f,1.0f,0.0f
+    };
+
+    GLuint apos = glGetAttribLocation(program,"aPosition");
+    glEnableVertexAttribArray(apos);
+    //传递顶点
+    glVertexAttribPointer(apos,3,GL_FLOAT,GL_FALSE,12,vers);
+
+    //加入材质坐标数据
+    static float txts[]{
+            1.0f,0.0f,
+            0.0f,0.0f,
+            0.0f,1.0f,
+            1.0f,1.0f
+    };
+    GLuint atex = glGetAttribLocation(program,"aTexCoord");
+    glEnableVertexAttribArray(atex);
+    glVertexAttribPointer(atex,2,GL_FLOAT,GL_FALSE,8,txts);
+
+    //初始化材质纹理
+    glUniform1i(glGetUniformLocation(program,"yTexture"),0);
+    glUniform1i(glGetUniformLocation(program,"uTexture"),0);
+    glUniform1i(glGetUniformLocation(program,"vTexture"),0);
+
+    XLOGI("初始化shader成功");
+    return true;
 }
 
 

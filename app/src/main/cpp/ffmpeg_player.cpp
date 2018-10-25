@@ -62,6 +62,7 @@ extern "C" {
 #include "IDecode.h"
 #include "FFDecode.h"
 #include "XEGL.h"
+#include "XShader.h"
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -69,6 +70,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, j
 
     ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
     XEGL::Get()->Init(window);
+    XShader shader;
+    shader.Init();
 }
 
 extern "C"

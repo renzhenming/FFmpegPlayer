@@ -44,8 +44,8 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
         //new Thread( this ).start();
         //初始化opengl egl 显示
 
-        //stringFromJNI();
-        //initView(holder.getSurface());
+        stringFromJNI();
+        initView(holder.getSurface());
 
     }
 

@@ -75,36 +75,10 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, j
     ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
     view->SetRender(window);
 }
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_stringFromJNI(JNIEnv *env, jobject instance) {
-
-    IDemux *demux = new FFDemux();
-    demux->Open("/sdcard/1080.mp4");
-
-    IDecode *videoDecode = new FFDecode();
-    videoDecode->Open(demux->GetVParam());
-
-    IDecode *audioDecode = new FFDecode();
-    audioDecode->Open(demux->GetAParam());
-
-    /*demux->AddObserver(videoDecode);
-    demux->AddObserver(audioDecode);
-
-    view = new GLVideoView();
-    videoDecode->AddObserver(view);
-
-    demux->Start();
-    videoDecode->Start();
-    audioDecode->Start();*/
-
-    /*demux->Start();
-    XSleep(5000);
-    demux->Stop();*/
-}
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_MainActivity_stringFromJNI(JNIEnv *env, jobject instance) {
 
     IDemux *demux = new FFDemux();
     demux->Open("/sdcard/1080.mp4");

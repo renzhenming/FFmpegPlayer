@@ -116,7 +116,7 @@ XData FFDecode ::RecvFrame(){
     }
 
     memcpy(data.datas,frame->data, sizeof(data.datas));
-
+    XLOGI("FFDecode ::RecvFrame -> memcpy");
     return data;
 }
 

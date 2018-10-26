@@ -121,10 +121,15 @@ bool XShader::Init(){
 
     //加入三维顶点数据 两个三角形组成正方形(数组元素的顺序无影响)
     static float vers[]={
-            1.0f,-1.0f,0.0f,
+            /*1.0f,-1.0f,0.0f,
             -1.0f,-1.0f,0.0f,
             -1.0f,1.0f,0.0f,
-            1.0f,1.0f,0.0f
+            1.0f,1.0f,0.0f,*/
+
+            1.0f,-1.0f,0.0f,
+            -1.0f,-1.0f,0.0f,
+            1.0f,1.0f,0.0f,
+            -1.0f,1.0f,0.0f,
     };
 
     GLuint apos = glGetAttribLocation(program,"aPosition");
@@ -134,10 +139,14 @@ bool XShader::Init(){
 
     //加入材质坐标数据
     static float txts[]{
-            1.0f,0.0f,
+            /*1.0f,0.0f,
             0.0f,0.0f,
             0.0f,1.0f,
-            1.0f,1.0f
+            1.0f,1.0f*/
+            1.0f,0.0f , //右下
+            0.0f,0.0f,
+            1.0f,1.0f,
+            0.0,1.0
     };
     GLuint atex = glGetAttribLocation(program,"aTexCoord");
     glEnableVertexAttribArray(atex);
@@ -191,6 +200,7 @@ void XShader::GetTexture(unsigned int index,int width,int height, unsigned char 
         glBindTexture(GL_TEXTURE_2D,texts[index]);
         //替换纹理内容
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,width,height,GL_LUMINANCE,GL_UNSIGNED_BYTE,buf);
+        XLOGI("XShader::GetTexture->success texts[index] ==%d",texts[index]);
     }
 }
 
@@ -201,6 +211,7 @@ void XShader::Draw() {
 
     //三维绘制
     glDrawArrays(GL_TRIANGLE_STRIP,0,4);
+    XLOGI("XShader::Draw->success");
 }
 
 

@@ -8,9 +8,9 @@ void IDemux::Main() {
         //if(d.size<=0)break;
         if (d.size>0){
             Notify(d);
-            XLOGI("demux data.size:%d",d.size);
+            //XLOGI("demux data.size:%d",d.size);
         } else{
-            XLOGI("demux reach the end break");
+            //XLOGI("demux reach the end break");
             break;
         }
     }

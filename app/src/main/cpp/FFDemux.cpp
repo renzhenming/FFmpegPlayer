@@ -108,7 +108,8 @@ XParameter FFDemux::GetAParam() {
     //获取参数对象
     XParameter parameter;
     parameter.avCodecParameters = avFormatContext->streams[audioIndex]->codecpar;
-
+    parameter.channels = avFormatContext->streams[audioStream]->codecpar->channels;
+    parameter.sample_rate = avFormatContext->streams[audioStream]->codecpar->sample_rate;
     return parameter;
 }
 /**

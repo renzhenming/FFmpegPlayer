@@ -65,6 +65,9 @@ extern "C" {
 #include "XShader.h"
 #include "IVideoView.h"
 #include "GLVideoView.h"
+#include "FFResample.h"
+#include "IAudioPlay.h"
+#include "SLAudioPlay.h"
 
 IVideoView *view = NULL;
 
@@ -95,23 +98,24 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_stringFromJNI(JNIEnv *env, jobject instan
     view = new GLVideoView();
     videoDecode->AddObserver(view);
 
+    IResample *resample = new FFResample();
+    resample->Open(demux->GetAParam());
+    audioDecode->AddObserver(resample);
+
+    IAudioPlay *audioPlay = new SLAudioPlay();
+    XParameter outParam = demux->GetAParam();
+    audioPlay->StartPlay(outParam);
+
+    resample->AddObserver(audioPlay);
+
+
     demux->Start();
     videoDecode->Start();
     audioDecode->Start();
 
-    /*demux->AddObserver(videoDecode);
-    demux->AddObserver(audioDecode);
 
-    //view = new GLVideoView();
-    //videoDecode->AddObserver(view);
 
-    demux->Start();
-    videoDecode->Start();
-    audioDecode->Start();*/
 
-    /*demux->Start();
-    XSleep(5000);
-    demux->Stop();*/
 }
 static double r2d(AVRational r) {
     LOGI("r.num= %lld r.den=%lld", r.num, r.den);

@@ -49,6 +49,10 @@ add_library( ffmpeg
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XEGL.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XShader.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/XTexture.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IResample.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/FFResample.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IAudioPlay.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/SLAudioPlay.cpp
 
 )
 

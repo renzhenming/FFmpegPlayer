@@ -15,13 +15,13 @@ bool FFResample::Open(XParameter in,XParameter out){
     swr_alloc_set_opts(
             swrContext,
             //输出的channel layout
-            av_get_default_channel_layout(2),
+            av_get_default_channel_layout(out.channels),
             //输出的样本格式
             AV_SAMPLE_FMT_S16,
             //输出的采样率
-            in.avCodecParameters->sample_rate,
+            out.sample_rate,
             //输入的channel layout
-            in.avCodecParameters->channel_layout,
+            av_get_default_channel_layout(in.avCodecParameters->channels),
             //输入的样本格式
             (AVSampleFormat)in.avCodecParameters->format,
             //输入的采样率
@@ -43,11 +43,10 @@ bool FFResample::Open(XParameter in,XParameter out){
     outChannels = in.avCodecParameters->channels;
     outFormat = AV_SAMPLE_FMT_S16;
 
-    XLOGE("FFResample::Open --> 音频重采样初始化成功");
+    XLOGI("FFResample::Open --> 音频重采样初始化成功");
     return true;
 }
 XData FFResample::Resample(XData inData){
-
     if(inData.size <= 0 || !inData.data) return XData();
     if(!swrContext){
         return XData();
@@ -69,6 +68,6 @@ XData FFResample::Resample(XData inData){
         out.Drop();
         return XData();
     }
-    XLOGI("swr_convert success = %d",len);
+    XLOGI("FFResample::Resample swr_convert success = %d",len);
     return out;
 }

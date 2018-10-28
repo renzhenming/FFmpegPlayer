@@ -7,6 +7,42 @@ SLObjectItf engineObject = NULL;
 SLEngineItf engineInterface = NULL;
 SLObjectItf mixture= NULL;
 SLObjectItf player = NULL;
+SLPlayItf playerInterface = NULL;
+SLAndroidSimpleBufferQueueItf pcmQueue = NULL;
+
+SLAudioPlay::SLAudioPlay(){
+    buf = new unsigned char[1024*1024];
+}
+
+SLAudioPlay :: ~SLAudioPlay(){
+    delete buf;
+    buf = 0;
+}
+
+void SLAudioPlay :: PlayCall(void *buf_queue){
+    if(!buf_queue) return;
+    SLAndroidSimpleBufferQueueItf bf = (SLAndroidSimpleBufferQueueItf)buf_queue;
+    XLOGI("SLAudioPlay :: PlayCall");
+    //阻塞
+    XData d = GetData();
+    if(d.size <= 0){
+        XLOGE("GetData() size is 0");
+        return;
+    }
+    if(!buf) return;
+    memcpy(buf,d.data,d.size);
+    (*bf)->Enqueue(bf,buf,d.size);
+    d.Drop();
+}
+
+static void PcmCall(SLAndroidSimpleBufferQueueItf bf,void *context){
+    SLAudioPlay *ap = (SLAudioPlay *)context;
+    if(!ap){
+        XLOGE("SLAudioPlay PcmCall failed,context is null");
+        return;
+    }
+    ap->PlayCall((void*)bf);
+}
 
 bool SLAudioPlay::StartPlay(XParameter out){
     /****************创建OpenSLES 引擎*******************/
@@ -85,8 +121,30 @@ bool SLAudioPlay::StartPlay(XParameter out){
         return false;
     }
     XLOGI("SLAudioPlay engineInterface CreateAudioPlayer success");
-    return true;
-}
-void SLAudioPlay::PlayCall(void *bufqueue){
+    //实例化播放器
+    (*player)->Realize(player,SL_BOOLEAN_FALSE);
+    //获取播放器接口
+    result = (*player)->GetInterface(player,SL_IID_PLAY,&playerInterface);
+    if(result != SL_RESULT_SUCCESS){
+        XLOGE("SLAudioPlay player GetInterface SL_IID_PLAY failed");
+        return false;
+    }
+    XLOGI("SLAudioPlay player GetInterface SL_IID_PLAY success");
+    //获取播放队列接口
+    result = (*player)->GetInterface(player,SL_IID_BUFFERQUEUE,&pcmQueue);
+    if(result != SL_RESULT_SUCCESS){
+        XLOGE("SLAudioPlay player GetInterface SL_IID_BUFFERQUEUE failed");
+        return false;
+    }
+    XLOGI("SLAudioPlay player GetInterface SL_IID_BUFFERQUEUE success");
+    //设置回调函数
+    (*pcmQueue)->RegisterCallback(pcmQueue,PcmCall,this);
 
+    //设置为播放状态
+    (*playerInterface)->SetPlayState(playerInterface,SL_PLAYSTATE_PLAYING);
+
+    //启动队列
+    (*pcmQueue)->Enqueue(pcmQueue,"",1);
+    XLOGI("SLAudioPlay play success");
+    return true;
 }

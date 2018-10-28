@@ -11,6 +11,9 @@ extern "C"{
  * @return
  */
 bool FFDecode ::Open(XParameter xParameter) {
+
+    //parameter在解封装之时就已经区分了音频参数和视频参数，所以，如果传入的parameter时音频
+    //那么这里解码就是针对音频解码，如果传入的parameter时视频，那么就是视频解码
     if (!xParameter.avCodecParameters) {
         XLOGE("FFDecode failed!CodecParameters is null");
         return false;
@@ -116,7 +119,6 @@ XData FFDecode ::RecvFrame(){
     }
 
     memcpy(data.datas,frame->data, sizeof(data.datas));
-    XLOGI("FFDecode ::RecvFrame -> memcpy");
     return data;
 }
 

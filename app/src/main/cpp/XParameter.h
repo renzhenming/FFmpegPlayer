@@ -6,6 +6,8 @@ struct AVCodecParameters;
 class XParameter {
 public:
     AVCodecParameters *avCodecParameters = 0;
+
+    //播放音频的时候设置的输出结果，默认
     int channels = 2;
     int sample_rate = 44100;
 };

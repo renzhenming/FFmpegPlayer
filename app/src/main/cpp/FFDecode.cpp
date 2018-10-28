@@ -1,16 +1,22 @@
 
 extern "C"{
 #include <libavcodec/avcodec.h>
+#include <libavcodec/jni.h>
 }
 #include "FFDecode.h"
 #include "XLog.h"
 
+void FFDecode::InitHard(void *vm){
+    av_jni_set_java_vm(vm,0);
+}
+
 /**
  * 打开解码器
  * @param xParameter
+ * @param isHard 是否硬解码
  * @return
  */
-bool FFDecode ::Open(XParameter xParameter) {
+bool FFDecode ::Open(XParameter xParameter,bool isHard) {
 
     //parameter在解封装之时就已经区分了音频参数和视频参数，所以，如果传入的parameter时音频
     //那么这里解码就是针对音频解码，如果传入的parameter时视频，那么就是视频解码
@@ -21,14 +27,20 @@ bool FFDecode ::Open(XParameter xParameter) {
     AVCodecParameters *avCodecParameters = xParameter.avCodecParameters;
 
     //获取解码器
-    AVCodec *avCodec = avcodec_find_decoder(avCodecParameters->codec_id);
+    AVCodec *avCodec;
+    if(isHard){
+        avCodec = avcodec_find_decoder_by_name("h264_mediacodec");
+    }else{
+        avCodec = avcodec_find_decoder(avCodecParameters->codec_id);
+    }
+
     if (!avCodec){
         XLOGE("avcodec_find_decoder %d failed!",avCodecParameters->codec_id);
         return false;
     }
 
     if (xParameter.avCodecParameters->codec_type == AVMEDIA_TYPE_VIDEO){
-        XLOGI("video avcodec_find_decoder success!");
+        XLOGI("video avcodec_find_decoder  %d success! %d ",avCodecParameters->codec_id,isHard);
     }else if(xParameter.avCodecParameters->codec_type == AVMEDIA_TYPE_AUDIO){
         XLOGI("audio avcodec_find_decoder success!");
     }
@@ -112,11 +124,14 @@ XData FFDecode ::RecvFrame(){
         data.size = (frame->linesize[0]+frame->linesize[1]+frame->linesize[2])*frame->height;
         data.width = frame->width;
         data.height = frame->height;
+
+        XLOGI("video format is %d",frame->format);
     }else if(avCodecContext->codec_type == AVMEDIA_TYPE_AUDIO){
 
         //音频size计算方法 ： 样本字节数 * 单通道样本数 * 通道数
         data.size = av_get_bytes_per_sample((AVSampleFormat)frame->format)*frame->nb_samples*2;
     }
+    data.format = frame->format;
 
     memcpy(data.datas,frame->data, sizeof(data.datas));
     return data;

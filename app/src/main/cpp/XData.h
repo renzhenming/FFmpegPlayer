@@ -19,6 +19,8 @@ struct XData {
     int height = 0;
     void Drop();
     bool Alloc(int size,const char *data=0);
+    //视频像素格式
+    int format = 0;
 };
 
 #endif

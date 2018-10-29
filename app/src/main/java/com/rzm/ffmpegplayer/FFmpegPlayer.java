@@ -7,7 +7,10 @@ import android.util.AttributeSet;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
-public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolder.Callback{
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolder.Callback,GLSurfaceView.Renderer{
 
     static {
         System.loadLibrary("ffmpeg");
@@ -23,7 +26,6 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
     public native void playVideo(String url,Surface surface);
     public native void playAudio(String url);
     public native void initOpenGL(String url,Surface surface);
-    public native void stringFromJNI();
 
     @Override
     public void run() {
@@ -44,8 +46,14 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
         //new Thread( this ).start();
         //初始化opengl egl 显示
 
-        stringFromJNI();
         initView(holder.getSurface());
+
+        //android 8.0 需要设置,不设置会显示白屏
+        setRenderer( this );
+
+
+        //只有在绘制数据改变时才绘制view，可以防止GLSurfaceView帧重绘
+        //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
     }
 
@@ -57,5 +65,20 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+    }
+
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+
+    }
+
+    @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+
+    }
+
+    @Override
+    public void onDrawFrame(GL10 gl) {
+
     }
 }

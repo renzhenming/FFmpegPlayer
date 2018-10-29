@@ -10,7 +10,8 @@
 class CXTexture:public XTexture{
 public:
     XShader shader;
-    virtual bool Init(void *window){
+    XTextureType type;
+    virtual bool Init(void *window,XTextureType type){
         if(!window){
             XLOGE("XTexture init failed,window is NULL");
             return false;
@@ -21,8 +22,8 @@ public:
             return false;
         }
         XLOGI("EGL init success");
-
-        if(!shader.Init()){
+        this->type = type;
+        if(!shader.Init((XShaderType)type)){
             XLOGE("XTexture init -- > shader init failed");
             return false;
         }
@@ -32,8 +33,12 @@ public:
 
     virtual void Draw(unsigned char *data[],int width,int height){
         shader.GetTexture(0,width,height,data[0]); //Y
-        shader.GetTexture(1,width/2,height/2,data[1]);  //U
-        shader.GetTexture(2,width/2,height/2,data[2]);  //V
+        if(type == XTEXTURE_YUV420P){
+            shader.GetTexture(1,width/2,height/2,data[1]);  //U
+            shader.GetTexture(2,width/2,height/2,data[2]);  //V
+        }else{
+            shader.GetTexture(1,width/2,height/2,data[1],true);  //UV
+        }
         shader.Draw();
         XEGL::Get()->Draw();
     }

@@ -6,7 +6,11 @@ extern "C"{
 
 void XData::Drop(){
     if(!data) return;
-    av_packet_free((AVPacket **)&data);
+    if(type == AVPACKET_TYPE){
+        av_packet_free((AVPacket **)&data);
+    }else{
+        delete data;
+    }
     data = 0;
     size = 0;
 }
@@ -22,5 +26,6 @@ bool XData::Alloc(int size, const char *d) {
     if(d){
         memcpy(this->data,d,size);
     }
+    this->size = size;
     return true;
 }

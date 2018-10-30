@@ -161,6 +161,7 @@ jint JNI_OnLoad(JavaVM *vm, void *res) {
 
 
     IPlayer::Get()->Open("/sdcard/1080.mp4");
+    IPlayer::Get()->Start();
 
     return JNI_VERSION_1_4;
 }

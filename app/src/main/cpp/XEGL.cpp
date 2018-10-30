@@ -7,6 +7,16 @@
 #include "XEGL.h"
 #include "XLog.h"
 
+/**
+ * EGL是Khronos组织创造的渲染API（OpenGL ES）和操作系统窗口之间的接口。当提供OpenGL ES时，不是必需的提供EGL，
+ * 开发者可以根据平台厂商公布的文档决定使 用何种接口.EGL API也有另外的功能，例如电力管理，支持多种渲染上下文，
+ * 分享贴图或者缓冲区等等，通过OpenGL ES扩展行为能够通过工具查询获得。
+ *
+ * EGL命名语法:
+ * 所有的EGL函数以egl前缀开始（例如eglCreateWindowSurface），EGL数据类型以EGL前缀开始例如EGLint和EGLenum。
+ *
+ * 同样OpenGL ES数据类型也以前缀GL开始
+ */
 class CXEGL:public XEGL{
 public:
 
@@ -20,9 +30,15 @@ public:
         //初始化EGL
 
         //获取Display eglGetDisplay
+
+        /**
+         * OpenGL ES命令出错会产生一个错误码，错误码被记录，能够使用glGetError函数查询，在第一个被记录的错误码
+         * 被查询前，不会记录新的错误码。一旦错误码被查询，当前错误码将变成GL_NO_ERROR。除了GL_OUT_OF_MEMORY
+         * 错误码以外，其它的错误码将被忽略，不影响程序运行状态。
+         */
         display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         if(display == EGL_NO_DISPLAY){
-            XLOGE("eglGetDisplay failed");
+            XLOGE("eglGetDisplay failed%d", eglGetError());
             return false;
         }
         XLOGI("eglGetDisplay success");

@@ -69,6 +69,8 @@ extern "C" {
 #include "IAudioPlay.h"
 #include "SLAudioPlay.h"
 
+#include "IPlayer.h"
+
 IVideoView *view = NULL;
 
 extern "C"
@@ -105,15 +107,15 @@ jint JNI_OnLoad(JavaVM *vm, void *res) {
         IDemux *demux = new FFDemux();
         //解封装，这一步执行之后，会得到AVFormatContext上下文对象，同时音视频
         //轨道index也会被赋值
-        demux->Open("/sdcard/1080.mp4");
+        //demux->Open("/sdcard/1080.mp4");
 
         IDecode *videoDecode = new FFDecode();
         //打开视频解码器
-        videoDecode->Open(demux->GetVParam(),true);
+        //videoDecode->Open(demux->GetVParam(),true);
 
         IDecode *audioDecode = new FFDecode();
         //打开音频解码器
-        audioDecode->Open(demux->GetAParam());
+        //audioDecode->Open(demux->GetAParam());
 
         //把视频解码器和音频解码器设置到解封装器的观察者，这样，当解封装完成之后，
         //解码器会收到解封装之后的数据XData,开始解码
@@ -131,7 +133,7 @@ jint JNI_OnLoad(JavaVM *vm, void *res) {
         XParameter audioOutParam = demux->GetAParam();
 
         //初始化音频重采样，可以通过第二个参数设置输出的声道数和采样率，这里默认使用源音频的参数设置
-        resample->Open(demux->GetAParam(),audioOutParam);
+        //resample->Open(demux->GetAParam(),audioOutParam);
         //将重采样器添加到音频解码器的观察者队列，音频解码成功之后会收到数据开始重采样
         audioDecode->AddObserver(resample);
 
@@ -141,14 +143,25 @@ jint JNI_OnLoad(JavaVM *vm, void *res) {
         resample->AddObserver(audioPlay);
 
         //初始化OpenSLES进行音频播放
-        audioPlay->StartPlay(audioOutParam);
+        //audioPlay->StartPlay(audioOutParam);
 
         //解封装器开始解封装视频文件，解封装成功之后加入队列(解码器中内置队列)，队列达到极值后进入等待状态
-        demux->Start();
+        //demux->Start();
         //视频解码器开始从队列中取出数据解码，如果队列为空则进入等待状态，
-        videoDecode->Start();
+        //videoDecode->Start();
         //音频解码器开始从队列中取出数据解码，如果队列为空则进入等待状态，
-        audioDecode->Start();
+        //audioDecode->Start();
+
+    IPlayer::Get()->demux = demux;
+    IPlayer::Get()->adecode = audioDecode;
+    IPlayer::Get()->vdecode = videoDecode;
+    IPlayer::Get()->videoView = view;
+    IPlayer::Get()->resample = resample;
+    IPlayer::Get()->audioPlay = audioPlay;
+
+
+    IPlayer::Get()->Open("/sdcard/1080.mp4");
+
     return JNI_VERSION_1_4;
 }
 

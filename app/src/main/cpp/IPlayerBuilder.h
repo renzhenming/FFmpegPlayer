@@ -1,10 +1,13 @@
-#ifndef FFMPEG_IPLAYRBUILDER_H
-#define FFMPEG_IPLAYRBUILDER_H
 
-class IPlayerBuilder{
+#ifndef FFMPEGPLAYER_IPLAYERBUILDER_H
+#define FFMPEGPLAYER_IPLAYERBUILDER_H
 
+#include "IPlayer.h"
+
+class IPlayerBuilder
+{
 public:
-    virtual IPlayer *BuildPlayer(unsigned char index = 0);
+    virtual IPlayer *BuilderPlayer(unsigned char index=0);
 protected:
     virtual IDemux *CreateDemux() = 0;
     virtual IDecode *CreateDecode() = 0;
@@ -14,4 +17,5 @@ protected:
     virtual IPlayer *CreatePlayer(unsigned char index=0) = 0;
 };
 
-#endif
+
+#endif //FFMPEGPLAYER_IPLAYERBUILDER_H

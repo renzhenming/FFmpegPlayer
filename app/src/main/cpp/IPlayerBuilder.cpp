@@ -1,3 +1,8 @@
+/*******************************************************************************
+**                                                                            **
+**                     Jiedi(China nanjing)Ltd.                               **
+**	               创建：夏曹俊，此代码可用作为学习参考                       **
+*******************************************************************************/
 
 #include "IPlayerBuilder.h"
 #include "IVideoView.h"
@@ -6,13 +11,12 @@
 #include "IAudioPlay.h"
 #include "IDemux.h"
 
-IPlayer * IPlayerBuilder::BuildPlayer(unsigned char index){
-
-    //创建播放器
+IPlayer *IPlayerBuilder::BuilderPlayer(unsigned char index)
+{
     IPlayer *play = CreatePlayer(index);
 
     //解封装
-    IDemux *demux = CreateDemux();
+    IDemux *de = CreateDemux();
 
     //视频解码
     IDecode *vdecode = CreateDecode();
@@ -21,10 +25,10 @@ IPlayer * IPlayerBuilder::BuildPlayer(unsigned char index){
     IDecode *adecode = CreateDecode();
 
     //解码器观察解封装
-    demux->AddObserver(vdecode);
-    demux->AddObserver(adecode);
+    de->AddObserver(vdecode);
+    de->AddObserver(adecode);
 
-    //创建VideoView
+    //显示观察视频解码器
     IVideoView *view = CreateVideoView();
     vdecode->AddObserver(view);
 
@@ -32,11 +36,11 @@ IPlayer * IPlayerBuilder::BuildPlayer(unsigned char index){
     IResample *resample = CreateResample();
     adecode->AddObserver(resample);
 
-    //音频播放器观察重采样结果
+    //音频播放观察重采样
     IAudioPlay *audioPlay = CreateAudioPlay();
     resample->AddObserver(audioPlay);
 
-    play->demux = demux;
+    play->demux = de;
     play->adecode = adecode;
     play->vdecode = vdecode;
     play->videoView = view;

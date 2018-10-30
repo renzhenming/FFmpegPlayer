@@ -70,19 +70,22 @@ extern "C" {
 #include "SLAudioPlay.h"
 
 #include "IPlayer.h"
+#include "FFPlayerBuilder.h"
 
 IVideoView *view = NULL;
-
+IPlayer *player = NULL;
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
 
     ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
-    view->SetRender(window);
+    //view->SetRender(window);
+    if(player)
+        player->InitView(window);
 }
 
 static double r2d(AVRational r) {
-    LOGI("r.num= %lld r.den=%lld", r.num, r.den);
+    LOGI("r.num= %d r.den=%d", r.num, r.den);
     return r.num == 0 || r.den == 0 ? 0 : (double) r.num / (double) r.den;
 
 }
@@ -97,6 +100,17 @@ long long GetNowMs() {
 }
 
 extern "C"
+JNIEXPORT
+jint JNI_OnLoad(JavaVM *vm, void *res) {
+    FFPlayerBuilder::InitHard(vm);
+
+    player = FFPlayerBuilder::Get()->BuilderPlayer();
+    player->Open("/sdcard/1080.mp4");
+    player->Start();
+    return JNI_VERSION_1_4;
+}
+
+/*extern "C"
 JNIEXPORT
 jint JNI_OnLoad(JavaVM *vm, void *res) {
     //av_jni_set_java_vm(vm, 0);
@@ -164,7 +178,7 @@ jint JNI_OnLoad(JavaVM *vm, void *res) {
     IPlayer::Get()->Start();
 
     return JNI_VERSION_1_4;
-}
+}*/
 
 /**
  * 播放视频，支持本地和网络两种
@@ -383,7 +397,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
             //continue;
             break;
         }
-        LOGW("stream = %d size =%d pts=%lld flag=%d pos = %d",
+        LOGW("stream = %d size =%d pts=%d flag=%d pos = %d",
              avPacket->stream_index, avPacket->size, avPacket->pts, avPacket->flags, avPacket->pos
         );
 

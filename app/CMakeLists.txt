@@ -54,6 +54,8 @@ add_library( ffmpeg
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IAudioPlay.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/SLAudioPlay.cpp
              ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IPlayer.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/IPlayerBuilder.cpp
+             ${CMAKE_CURRENT_SOURCE_DIR}/src/main/cpp/FFPlayerBuilder.cpp
 
 )
 

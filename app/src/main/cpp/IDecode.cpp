@@ -33,6 +33,18 @@ void IDecode::Main() {
     while (!isExit) {
         packsMutex.lock();
 
+        //判断音视频同步
+        if (isVideo && synPts > 0) {
+            if (synPts < pts) {
+                XLOGI("音视频同步..等待.. 视频pts = %d 音频pts=%d", synPts, pts);
+                packsMutex.unlock();
+                XSleep(1);
+                continue;
+            }else{
+                XLOGI("音视频同步..无需等待.. 视频pts = %d 音频pts=%d", synPts, pts);
+            }
+        }
+
         if (packs.empty()) {
             XLOGI("IDecode ::Main 从队列种取packet,队列为空，进入等待状态");
             //如果队列中没有数据，则线程休眠
@@ -58,6 +70,7 @@ void IDecode::Main() {
                     XLOGE("IDecode ::Main 从解码器种读取解码后的数据失败  frame.size=%", frame.size);
                     break;
                 }
+                pts = frame.pts;
                 XLOGI("IDecode ::Main 从解码器种读取解码后的数据成功 开始通知观察者 frame.size = %d", frame.size);
                 //发送数据给观察者
                 this->Notify(frame);

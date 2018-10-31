@@ -18,6 +18,9 @@ public:
 
     //最大缓冲值
     int maxFrames = 100;
+
+    //同步时间使用
+    int pts = 0;
 protected:
     std::list<XData> frames;
     std::mutex framesMutex;

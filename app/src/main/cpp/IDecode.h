@@ -25,6 +25,10 @@ public:
     //缓冲队列的容量
     int maxList = 100;
 
+    //同步时间，再次打开文件要清理
+    int synPts = 0;
+    int pts = 0;
+
 protected:
     virtual void Main();
 

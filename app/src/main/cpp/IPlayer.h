@@ -1,6 +1,7 @@
 #ifndef FFMPEG_IPLAY_H
 #define FFMPEG_IPLAY_H
 
+#include <mutex>
 #include "XThread.h"
 #include "XParameter.h"
 
@@ -38,6 +39,9 @@ public:
     IAudioPlay *audioPlay = 0;
 
 protected:
+    //用作音视频同步
+    void Main();
+    std::mutex mutex;
     //单例模式
     IPlayer() {};
 };

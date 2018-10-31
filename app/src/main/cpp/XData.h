@@ -10,6 +10,7 @@ enum XDataType {
 
 struct XData {
     int type = AVPACKET_TYPE;
+    int pts = 0;
     unsigned char *data = 0;
     unsigned char *datas[8] = {0};
     int size = 0;

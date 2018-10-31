@@ -6,7 +6,7 @@
 SLObjectItf engineObject = NULL;
 SLEngineItf engineInterface = NULL;
 SLObjectItf mixture= NULL;
-SLObjectItf player = NULL;
+SLObjectItf playerItf = NULL;
 SLPlayItf playerInterface = NULL;
 SLAndroidSimpleBufferQueueItf pcmQueue = NULL;
 
@@ -109,7 +109,7 @@ bool SLAudioPlay::StartPlay(XParameter out){
 
     result = (*engineInterface)->CreateAudioPlayer(
             engineInterface,
-            &player,
+            &playerItf,
             &ds,
             &audioSink,
             sizeof(ids)/sizeof(SLInterfaceID),
@@ -122,21 +122,21 @@ bool SLAudioPlay::StartPlay(XParameter out){
     }
     XLOGI("SLAudioPlay engineInterface CreateAudioPlayer success");
     //实例化播放器
-    (*player)->Realize(player,SL_BOOLEAN_FALSE);
+    (*playerItf)->Realize(playerItf,SL_BOOLEAN_FALSE);
     //获取播放器接口
-    result = (*player)->GetInterface(player,SL_IID_PLAY,&playerInterface);
+    result = (*playerItf)->GetInterface(playerItf,SL_IID_PLAY,&playerInterface);
     if(result != SL_RESULT_SUCCESS){
-        XLOGE("SLAudioPlay player GetInterface SL_IID_PLAY failed");
+        XLOGE("SLAudioPlay playerItf GetInterface SL_IID_PLAY failed");
         return false;
     }
-    XLOGI("SLAudioPlay player GetInterface SL_IID_PLAY success");
+    XLOGI("SLAudioPlay playerItf GetInterface SL_IID_PLAY success");
     //获取播放队列接口
-    result = (*player)->GetInterface(player,SL_IID_BUFFERQUEUE,&pcmQueue);
+    result = (*playerItf)->GetInterface(playerItf,SL_IID_BUFFERQUEUE,&pcmQueue);
     if(result != SL_RESULT_SUCCESS){
-        XLOGE("SLAudioPlay player GetInterface SL_IID_BUFFERQUEUE failed");
+        XLOGE("SLAudioPlay playerItf GetInterface SL_IID_BUFFERQUEUE failed");
         return false;
     }
-    XLOGI("SLAudioPlay player GetInterface SL_IID_BUFFERQUEUE success");
+    XLOGI("SLAudioPlay playerItf GetInterface SL_IID_BUFFERQUEUE success");
     //设置回调函数
     (*pcmQueue)->RegisterCallback(pcmQueue,PcmCall,this);
 

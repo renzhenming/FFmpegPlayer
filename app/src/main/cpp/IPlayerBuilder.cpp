@@ -11,8 +11,7 @@
 #include "IAudioPlay.h"
 #include "IDemux.h"
 
-IPlayer *IPlayerBuilder::BuilderPlayer(unsigned char index)
-{
+IPlayer *IPlayerBuilder::BuilderPlayer(unsigned char index) {
     IPlayer *play = CreatePlayer(index);
 
     //解封装

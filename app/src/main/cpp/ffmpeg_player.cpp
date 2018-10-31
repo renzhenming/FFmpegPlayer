@@ -49,7 +49,6 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavcodec/jni.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 };
@@ -61,25 +60,22 @@ extern "C" {
 #include "XLog.h"
 #include "IDecode.h"
 #include "FFDecode.h"
-#include "XEGL.h"
-#include "XShader.h"
 #include "IVideoView.h"
 #include "GLVideoView.h"
 #include "FFResample.h"
 #include "IAudioPlay.h"
 #include "SLAudioPlay.h"
-
 #include "IPlayer.h"
 #include "FFPlayerBuilder.h"
 
-IVideoView *view = NULL;
+
 IPlayer *player = NULL;
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
 
     ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
-    //view->SetRender(window);
     if(player)
         player->InitView(window);
 }
@@ -110,7 +106,9 @@ jint JNI_OnLoad(JavaVM *vm, void *res) {
     return JNI_VERSION_1_4;
 }
 
-/*extern "C"
+/*
+IVideoView *view = NULL;
+extern "C"
 JNIEXPORT
 jint JNI_OnLoad(JavaVM *vm, void *res) {
     //av_jni_set_java_vm(vm, 0);

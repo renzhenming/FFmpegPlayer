@@ -1,5 +1,5 @@
-#ifndef FFMPEGPLAYER_SLAudioPlay_H
-#define FFMPEGPLAYER_SLAudioPlay_H
+#ifndef FFMPEGPLAYER_SLAUDIOPLAY_H
+#define FFMPEGPLAYER_SLAUDIOPLAY_H
 
 #include "IAudioPlay.h"
 

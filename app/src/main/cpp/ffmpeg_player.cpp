@@ -64,19 +64,14 @@ extern "C" {
 #include "FFResample.h"
 #include "IAudioPlay.h"
 #include "SLAudioPlay.h"
-#include "IPlayer.h"
-#include "FFPlayerBuilder.h"
-
-
-IPlayer *player = NULL;
+#include "IPlayerProxy.h"
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
 
     ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
-    if (player)
-        player->InitView(window);
+    IPlayerProxy::Get()->InitView(window);
 }
 
 static double r2d(AVRational r) {
@@ -97,11 +92,11 @@ long long GetNowMs() {
 extern "C"
 JNIEXPORT
 jint JNI_OnLoad(JavaVM *vm, void *res) {
-    FFPlayerBuilder::InitHard(vm);
 
-    player = FFPlayerBuilder::Get()->BuilderPlayer();
-    player->Open("/sdcard/1080.mp4");
-    player->Start();
+    IPlayerProxy::Get()->Init(vm);
+    IPlayerProxy::Get()->Open("/sdcard/1080.mp4");
+    IPlayerProxy::Get()->Start();
+
     return JNI_VERSION_1_4;
 }
 

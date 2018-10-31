@@ -5,7 +5,7 @@
 void XSleep(int mis);
 
 //c++11 线程库
-class XThread{
+class XThread {
 public:
 
     //启动线程
@@ -15,12 +15,12 @@ public:
     virtual void Stop();
 
     //入口主函数
-    virtual void Main(){
+    virtual void Main() {
 
     }
 
 protected:
-    bool isExit= false;
+    bool isExit = false;
     bool isRunning = false;
 
 private:

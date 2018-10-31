@@ -10,9 +10,10 @@
 
 class XTexture;
 
-class GLVideoView : public IVideoView{
+class GLVideoView : public IVideoView {
 public:
     virtual void SetRender(void *window);
+
     virtual void Render(XData data);
 
 protected:

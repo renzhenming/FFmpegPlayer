@@ -5,14 +5,15 @@
 
 struct AVCodecContext;
 struct AVFrame;
+
 //继承的时候，这个public表示IObserver中的属性或方法对子类TestObserver是public
-class FFDecode : public IDecode{
+class FFDecode : public IDecode {
 public:
     //使用硬解码时需要初始化
-    static void InitHard(void* vm);
+    static void InitHard(void *vm);
 
     //打开解码器
-    virtual bool Open(XParameter xParameter,bool isHard);
+    virtual bool Open(XParameter xParameter, bool isHard);
 
     //future模型 发送数据到线程解码
     virtual bool SendPacket(XData packet);

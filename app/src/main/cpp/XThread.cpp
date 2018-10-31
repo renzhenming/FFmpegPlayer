@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void XSleep(int mis){
+void XSleep(int mis) {
     chrono::milliseconds du(mis);
     this_thread::sleep_for(du);
 }
@@ -16,7 +16,7 @@ void XSleep(int mis){
 //启动线程
 bool XThread::Start() {
     isExit = false;
-    thread th(&XThread::ThreadMain,this);
+    thread th(&XThread::ThreadMain, this);
     th.detach();
     return true;
 }
@@ -34,7 +34,7 @@ void XThread::Stop() {
     XLOGI("Stop 停止线程begin!");
     isExit = true;
     for (int i = 0; i < 200; ++i) {
-        if(!isRunning){
+        if (!isRunning) {
             XLOGI("Stop 停止线程成功");
             return;
         }

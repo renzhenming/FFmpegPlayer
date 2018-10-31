@@ -2,12 +2,12 @@
 #include "XLog.h"
 
 void IDemux::Main() {
-    while(!isExit){
+    while (!isExit) {
         XData d = Read();
-        if (d.size>0){
-            XLOGI("IDemux::Main 开始解封装 data.size:%d",d.size);
+        if (d.size > 0) {
+            XLOGI("IDemux::Main 开始解封装 data.size:%d", d.size);
             Notify(d);
-        } else{
+        } else {
             XLOGI("IDemux::Main 解封装完成 break");
             break;
         }

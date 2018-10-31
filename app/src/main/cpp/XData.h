@@ -17,8 +17,11 @@ struct XData {
     bool isVideo = false;
     int width = 0;
     int height = 0;
+
     void Drop();
-    bool Alloc(int size,const char *data=0);
+
+    bool Alloc(int size, const char *data = 0);
+
     //视频像素格式
     int format = 0;
 };

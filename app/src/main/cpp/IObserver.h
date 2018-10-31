@@ -6,11 +6,11 @@
 #include "XData.h"
 #include "XThread.h"
 
-class IObserver : public XThread{
+class IObserver : public XThread {
 
 public:
     //观察者接收数据
-    virtual void Update(XData data){}
+    virtual void Update(XData data) {}
 
     //添加观察者 (线程安全)
     void AddObserver(IObserver *observer);
@@ -20,7 +20,7 @@ public:
 
 protected:
 
-    std::vector<IObserver *>observers;
+    std::vector<IObserver *> observers;
     std::mutex mutex;
 };
 

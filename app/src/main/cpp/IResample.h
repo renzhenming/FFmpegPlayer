@@ -9,11 +9,14 @@
 #include "XData.h"
 #include "IObserver.h"
 
-class IResample : public IObserver{
+class IResample : public IObserver {
 public:
-    virtual bool Open(XParameter in,XParameter out=XParameter()) = 0;
+    virtual bool Open(XParameter in, XParameter out = XParameter()) = 0;
+
     virtual XData Resample(XData inData) = 0;
+
     virtual void Update(XData data);
+
     int outChannels = 2;
     int outFormat = 1;
 };

@@ -5,10 +5,10 @@
 #include "XParameter.h"
 #include <list>
 
-class IDecode : public IObserver{
+class IDecode : public IObserver {
 public:
     //打开解码器
-    virtual bool Open(XParameter xParameter,bool isHard=false)=0;
+    virtual bool Open(XParameter xParameter, bool isHard = false)=0;
 
     //future模型，发送数据到线程解码
     virtual bool SendPacket(XData packet) = 0;

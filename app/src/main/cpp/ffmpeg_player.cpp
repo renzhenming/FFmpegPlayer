@@ -54,7 +54,6 @@ extern "C" {
 };
 
 
-
 #include "FFDemux.h"
 #include "IObserver.h"
 #include "XLog.h"
@@ -75,8 +74,8 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
 
-    ANativeWindow *window = ANativeWindow_fromSurface(env,surface);
-    if(player)
+    ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
+    if (player)
         player->InitView(window);
 }
 
@@ -515,8 +514,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playVideo(JNIEnv *env, jobject instance, 
 
     }
     av_frame_free(&avFrame);
-    delete []rgb;
-    delete []pcm;
+    delete[]rgb;
+    delete[]pcm;
     //关闭上下文
     avformat_close_input(&avFormatContext);
     env->ReleaseStringUTFChars(url_, url);
@@ -647,8 +646,8 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_playAudio(JNIEnv *env, jobject instance, 
 	 * const SLboolean * pInterfaceRequired  这里也是一个数组,用来标记每个需要包含的Interface
      */
     result = (*engineInterface)->CreateAudioPlayer(engineInterface, &slPlayerItf, &slDataSource,
-                                               &slDataSink, sizeof(ids) / sizeof(SLInterfaceID),
-                                               ids, req);
+                                                   &slDataSink, sizeof(ids) / sizeof(SLInterfaceID),
+                                                   ids, req);
     if (result != SL_RESULT_SUCCESS) {
         LOGE("create audio player failed");
     } else {

@@ -6,7 +6,7 @@
 #include "XParameter.h"
 
 //解封装接口
-class IDemux : public IObserver{
+class IDemux : public IObserver {
 public:
     //打开文件，或者流媒体， rmtp http rtsp
     //纯虚函数:是一种特殊的虚函数，在许多情况下，在基类中不能对虚函数给出有意义的实现，而把它声明为纯虚函数，

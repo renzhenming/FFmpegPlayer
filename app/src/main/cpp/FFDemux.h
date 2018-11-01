@@ -14,6 +14,8 @@ public:
     //打开文件，或者流媒体 rmtp http rtsp
     virtual bool Open(const char *url);
 
+    virtual void Close();
+
     //获取视频参数
     virtual XParameter GetVParam();
 
@@ -27,6 +29,7 @@ private:
     AVFormatContext *avFormatContext = 0;
     int audioStream = 1;
     int videoStream = 0;
+    std::mutex mutex;
 };
 
 #endif

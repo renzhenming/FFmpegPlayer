@@ -29,6 +29,17 @@ void IDecode::Update(XData packet) {
     }
 }
 
+void IDecode::Clear() {
+    packsMutex.lock();
+    while(!packs.empty()){
+        packs.front().Drop();
+        packs.pop_front();
+    }
+    pts = 0;
+    synPts = 0;
+    packsMutex.unlock();
+}
+
 void IDecode::Main() {
     while (!isExit) {
         packsMutex.lock();

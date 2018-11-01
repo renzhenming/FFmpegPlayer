@@ -18,7 +18,7 @@ void FFDecode::InitHard(void *vm) {
  * @return
  */
 bool FFDecode::Open(XParameter xParameter, bool isHard) {
-
+    Close();
     //parameter在解封装之时就已经区分了音频参数和视频参数，所以，如果传入的parameter时音频
     //那么这里解码就是针对音频解码，如果传入的parameter时视频，那么就是视频解码
     if (!xParameter.avCodecParameters) {
@@ -46,6 +46,7 @@ bool FFDecode::Open(XParameter xParameter, bool isHard) {
         XLOGI("audio avcodec_find_decoder success!");
     }
 
+    mutex.lock();
 
     //创建解码器上下文
     avCodecContext = avcodec_alloc_context3(avCodec);
@@ -56,6 +57,7 @@ bool FFDecode::Open(XParameter xParameter, bool isHard) {
     //打开解码器
     int result = avcodec_open2(avCodecContext, 0, 0);
     if (result != 0) {
+        mutex.unlock();
         char buf[1024] = {0};
         av_strerror(result, buf, sizeof(buf) - 1);
         XLOGE("avcodec_open2 failed %s", buf);
@@ -73,7 +75,25 @@ bool FFDecode::Open(XParameter xParameter, bool isHard) {
 
         XLOGI("audio avcodec_open2 success!");
     }
+    mutex.unlock();
     return true;
+}
+
+void FFDecode::Close(){
+    IDecode::Clear();
+    mutex.lock();
+
+    pts = 0;
+    if(frame){
+        av_frame_free(&frame);
+    }
+
+    if(avCodecContext){
+        avcodec_close(avCodecContext);
+        avcodec_free_context(&avCodecContext);
+    }
+
+    mutex.unlock();
 }
 
 /**
@@ -84,12 +104,15 @@ bool FFDecode::Open(XParameter xParameter, bool isHard) {
 bool FFDecode::SendPacket(XData packet) {
     if (packet.size <= 0 || !packet.data)return false;
 
+    mutex.lock();
     if (!avCodecContext) {
+        mutex.unlock();
         return false;
     }
 
     int result = avcodec_send_packet(avCodecContext, (AVPacket *) packet.data);
 
+    mutex.unlock();
     if (result != 0) {
         return false;
     }
@@ -102,7 +125,9 @@ bool FFDecode::SendPacket(XData packet) {
  * @return
  */
 XData FFDecode::RecvFrame() {
+    mutex.lock();
     if (!avCodecContext) {
+        mutex.unlock();
         return XData();
     }
 
@@ -113,6 +138,7 @@ XData FFDecode::RecvFrame() {
     int result = avcodec_receive_frame(avCodecContext, frame);
 
     if (result != 0) {
+        mutex.unlock();
         return XData();
     }
 
@@ -137,6 +163,8 @@ XData FFDecode::RecvFrame() {
     memcpy(data.datas, frame->data, sizeof(data.datas));
 
     data.pts = frame->pts;
+
+    mutex.unlock();
     return data;
 }
 

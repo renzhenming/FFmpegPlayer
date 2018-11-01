@@ -102,10 +102,13 @@ FFDemux::FFDemux() {
  */
 bool FFDemux::Open(const char *url) {
 
+    Close();
+    mutex.lock();
     //打开视频文件
     XLOGI("begin open file %s", url);
     int result = avformat_open_input(&avFormatContext, url, 0, 0);
     if (result != 0) {
+        mutex.unlock();
         char buf[1024] = {0};
         av_strerror(result, buf, sizeof(buf));
         XLOGE("FFDemux open %s failed! %s", url, buf);
@@ -116,6 +119,7 @@ bool FFDemux::Open(const char *url) {
     //读取视频信息
     result = avformat_find_stream_info(avFormatContext, 0);
     if (result != 0) {
+        mutex.unlock();
         char buf[1024] = {0};
         av_strerror(result, buf, sizeof(buf));
         XLOGE("FFDemux avformat_find_stream_info %s failed! %s", url, buf);
@@ -124,18 +128,29 @@ bool FFDemux::Open(const char *url) {
     this->totalMs = avFormatContext->duration / (AV_TIME_BASE / 1000);
     XLOGI("FFDemux avformat_find_stream_info %s success!totalMs =%d", url, totalMs);
 
+    mutex.unlock();
     //解封装之后获取到视频和音频的参数
     GetVParam();
     GetAParam();
     return true;
 };
 
+void FFDemux:: Close(){
+    mutex.lock();
+    if(avFormatContext){
+        avformat_close_input(&avFormatContext);
+    }
+    mutex.unlock();
+}
+
 /**
  * 获取视频参数
  * @return
  */
 XParameter FFDemux::GetVParam() {
+    mutex.lock();
     if (!avFormatContext) {
+        mutex.unlock();
         XLOGE("GetVParam failed !AVFormatContext is null");
         return XParameter();
     }
@@ -143,6 +158,7 @@ XParameter FFDemux::GetVParam() {
     //获取视频流索引
     int videoIndex = av_find_best_stream(avFormatContext, AVMEDIA_TYPE_VIDEO, -1, -1, 0, 0);
     if (videoIndex < 0) {
+        mutex.unlock();
         XLOGE("av_find_best_stream video failed");
         return XParameter();
     }
@@ -151,7 +167,7 @@ XParameter FFDemux::GetVParam() {
     //获取参数对象
     XParameter parameter;
     parameter.avCodecParameters = avFormatContext->streams[videoIndex]->codecpar;
-
+    mutex.unlock();
     return parameter;
 }
 
@@ -160,7 +176,9 @@ XParameter FFDemux::GetVParam() {
  * @return
  */
 XParameter FFDemux::GetAParam() {
+    mutex.lock();
     if (!avFormatContext) {
+        mutex.unlock();
         XLOGE("GetAParam failed !AVFormatContext is null");
         return XParameter();
     }
@@ -168,6 +186,7 @@ XParameter FFDemux::GetAParam() {
     //获取视频流索引
     int audioIndex = av_find_best_stream(avFormatContext, AVMEDIA_TYPE_AUDIO, -1, -1, 0, 0);
     if (audioIndex < 0) {
+        mutex.unlock();
         XLOGE("av_find_best_stream audio failed");
         return XParameter();
     }
@@ -179,6 +198,7 @@ XParameter FFDemux::GetAParam() {
     parameter.avCodecParameters = avFormatContext->streams[audioIndex]->codecpar;
     parameter.channels = avFormatContext->streams[audioStream]->codecpar->channels;
     parameter.sample_rate = avFormatContext->streams[audioStream]->codecpar->sample_rate;
+    mutex.unlock();
     return parameter;
 }
 
@@ -186,12 +206,16 @@ XParameter FFDemux::GetAParam() {
  * 解码一帧数据，数据由调用者清理
  */
 XData FFDemux::Read() {
-    if (!avFormatContext)
+    mutex.lock();
+    if (!avFormatContext){
+        mutex.unlock();
         return XData();
+    }
     XData d;
     AVPacket *avPacket = av_packet_alloc();
     int result = av_read_frame(avFormatContext, avPacket);
     if (result != 0) {
+        mutex.unlock();
         av_packet_free(&avPacket);
         return XData();
     }
@@ -208,6 +232,7 @@ XData FFDemux::Read() {
         d.isAudio = false;
     } else {
         av_packet_free(&avPacket);
+        mutex.unlock();
         return XData();
     }
 
@@ -220,6 +245,8 @@ XData FFDemux::Read() {
                     (1000 * r2d(avFormatContext->streams[avPacket->stream_index]->time_base));
 
     d.pts = (int) avPacket->pts;
+
+    mutex.unlock();
     return d;
 };
 

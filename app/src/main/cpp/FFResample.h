@@ -13,10 +13,13 @@ class FFResample : public IResample {
 public:
     virtual bool Open(XParameter in, XParameter out = XParameter());
 
+    virtual void Close();
+
     virtual XData Resample(XData inData);
 
 protected:
-    SwrContext *swrContext;
+    SwrContext *swrContext = 0;
+    std::mutex mutex;
 };
 
 #endif //FFMPEGPLAYER_FFRESAMPLE_H

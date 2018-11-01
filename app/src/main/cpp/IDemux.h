@@ -14,6 +14,8 @@ public:
     // virtual <类型><函数名>(<参数表>)=0;
     virtual bool Open(const char *url) = 0;
 
+    virtual void Close() = 0;
+
     //获取视频参数
     virtual XParameter GetVParam() = 0;
 

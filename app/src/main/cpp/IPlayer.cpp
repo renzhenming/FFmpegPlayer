@@ -42,6 +42,7 @@ bool IPlayer::Open(const char *path) {
     mutex.lock();
     //解封装
     if (!demux || !demux->Open(path)) {
+        mutex.unlock();
         XLOGE("IPlayer::Open demux->Open %s failed!", path);
         return false;
     }

@@ -10,6 +10,8 @@ extern "C" {
 #include "XLog.h"
 
 bool FFResample::Open(XParameter in, XParameter out) {
+    Close();
+    mutex.lock();
     //创建上下文对象
     swrContext = swr_alloc();
     //给重采样上下文填充参数
@@ -34,6 +36,7 @@ bool FFResample::Open(XParameter in, XParameter out) {
     //初始化上下文
     int result = swr_init(swrContext);
     if (result != 0) {
+        mutex.unlock();
         XLOGE("swr_init failed!");
         return false;
     } else {
@@ -45,12 +48,24 @@ bool FFResample::Open(XParameter in, XParameter out) {
     outFormat = AV_SAMPLE_FMT_S16;
 
     XLOGI("FFResample::Open --> 音频重采样初始化成功");
+    mutex.unlock();
     return true;
+}
+
+void FFResample::Close() {
+    mutex.lock();
+    if(swrContext){
+        swr_free(&swrContext);
+    }
+    mutex.unlock();
 }
 
 XData FFResample::Resample(XData inData) {
     if (inData.size <= 0 || !inData.data) return XData();
+
+    mutex.lock();
     if (!swrContext) {
+        mutex.unlock();
         return XData();
     }
 
@@ -61,6 +76,7 @@ XData FFResample::Resample(XData inData) {
     int outsize =
             outChannels * frame->nb_samples * av_get_bytes_per_sample((AVSampleFormat) outFormat);
     if (outsize <= 0) {
+        mutex.unlock();
         return XData();
     }
     out.Alloc(outsize);
@@ -69,10 +85,12 @@ XData FFResample::Resample(XData inData) {
     int len = swr_convert(swrContext, outArr, frame->nb_samples, (const uint8_t **) frame->data,
                           frame->nb_samples);
     if (len <= 0) {
+        mutex.unlock();
         out.Drop();
         return XData();
     }
     out.pts = inData.pts;
     XLOGI("FFResample::Resample swr_convert success = %d", len);
+    mutex.unlock();
     return out;
 }

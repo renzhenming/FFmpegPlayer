@@ -21,6 +21,8 @@ public:
 
     virtual bool Open(const char *path);
 
+    virtual void Close();
+
     virtual bool Start();
 
     virtual void InitView(void *window);

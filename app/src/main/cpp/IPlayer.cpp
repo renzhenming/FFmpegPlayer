@@ -16,10 +16,15 @@ IPlayer *IPlayer::Get(unsigned char index) {
 
 void IPlayer::InitView(void *window) {
     if (videoView) {
+        videoView->Close();
         videoView->SetRender(window);
     }
 }
 
+/**
+ * 音视频同步线程，不断的获取音频的pts,传递到视频，
+ * 视频根据音频pts进行同步
+ */
 void IPlayer::Main() {
     while(!isExit){
         mutex.lock();
@@ -39,6 +44,7 @@ void IPlayer::Main() {
 }
 
 bool IPlayer::Open(const char *path) {
+    Close();
     mutex.lock();
     //解封装
     if (!demux || !demux->Open(path)) {
@@ -70,10 +76,55 @@ bool IPlayer::Open(const char *path) {
     return true;
 }
 
+void IPlayer::Close() {
+    mutex.lock();
+    //先关闭主体线程再清理观察者线程
+    XThread::Stop();
 
+    //解封装
+    if(demux)
+        demux->Stop();
+    //解码
+    if(vdecode)
+        vdecode->Stop();
+    if(adecode)
+        adecode->Stop();
+    //清理缓冲队列
+    if(vdecode)
+        vdecode->Clear();
+    if(adecode)
+        adecode->Clear();
+    if(audioPlay)
+        audioPlay->Clear();
+
+    //清理资源
+    if(audioPlay)
+        audioPlay->Close();
+    if(videoView)
+        videoView->Close();
+    if(vdecode)
+        vdecode->Close();
+    if (adecode)
+        adecode->Close();
+    if(demux)
+        demux->Close();
+    mutex.unlock();
+}
+
+/**
+ * 注意播放线程和解码线程的开启顺序，如果把vdecode->Start();放在后边开启，会导致
+ * 视频前边部分帧播放丢失的问题
+ * @return
+ */
 bool IPlayer::Start() {
     mutex.lock();
+
+    if (vdecode) {
+        vdecode->Start();
+    }
+
     if (!demux || !demux->Start()) {
+        mutex.unlock();
         XLOGE("IPlayer::Start demux->Start failed!");
         return false;
     }
@@ -83,9 +134,7 @@ bool IPlayer::Start() {
     if (audioPlay) {
         audioPlay->StartPlay(outParam);
     }
-    if (vdecode) {
-        vdecode->Start();
-    }
+
 
     XLOGI("IPlayer::Start success!");
     XThread::Start();

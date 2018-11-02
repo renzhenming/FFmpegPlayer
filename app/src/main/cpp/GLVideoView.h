@@ -16,9 +16,12 @@ public:
 
     virtual void Render(XData data);
 
+    virtual void Close();
+
 protected:
     void *view = 0;
     XTexture *texture = 0;
+    std::mutex mutex;
 };
 
 #endif //FFMPEGPLAYER_GLVIDEOVIEW_H

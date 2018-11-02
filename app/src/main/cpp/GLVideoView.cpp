@@ -10,6 +10,15 @@ void GLVideoView::SetRender(void *window) {
     view = window;
 }
 
+void GLVideoView::Close() {
+    mutex.lock();
+    if(texture){
+        texture->Drop();
+        texture = 0;
+    }
+    mutex.unlock();
+}
+
 void GLVideoView::Render(XData data) {
     if (!view) return;
     if (!texture) {

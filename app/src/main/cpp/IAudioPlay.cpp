@@ -24,6 +24,16 @@ void IAudioPlay::Update(XData data) {
     }
 }
 
+//清理音频队列
+void IAudioPlay::Clear(){
+    framesMutex.lock();
+    while(!frames.empty()){
+        frames.front().Drop();
+        frames.pop_front();
+    }
+    framesMutex.unlock();
+}
+
 XData IAudioPlay::GetData() {
     XData d;
     while (!isExit) {

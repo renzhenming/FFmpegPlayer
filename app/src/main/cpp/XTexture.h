@@ -5,6 +5,8 @@
 #ifndef FFMPEGPLAYER_XTEXTURE_H
 #define FFMPEGPLAYER_XTEXTURE_H
 
+#include <mutex>
+
 //数值和ffmpeg中保持一致
 enum XTextureType {
     // Y 4  u 1 v 1
@@ -22,6 +24,15 @@ public:
     virtual bool Init(void *window, XTextureType type = XTEXTURE_YUV420P) = 0;
 
     virtual void Draw(unsigned char *data[], int width, int height) = 0;
+
+    virtual void Drop() = 0;
+
+    virtual ~XTexture(){};
+
+protected:
+    XTexture(){};
+
+    std::mutex mutex;
 };
 
 #endif //FFMPEGPLAYER_XTEXTURE_H

@@ -31,7 +31,9 @@ void SLAudioPlay::PlayCall(void *buf_queue) {
     }
     if (!buf) return;
     memcpy(buf, d.data, d.size);
+    mutex.lock();
     (*bf)->Enqueue(bf, buf, d.size);
+    mutex.unlock();
     d.Drop();
 }
 
@@ -45,11 +47,16 @@ static void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
 }
 
 bool SLAudioPlay::StartPlay(XParameter out) {
+
+    Close();
+
+    mutex.lock();
     /****************创建OpenSLES 引擎*******************/
 
     //Object是一个资源的抽象集合,可以通过它获取各种资源,所有的Object在OpenSL里面我们拿到的都是一个SLObjectItf
     SLresult result = slCreateEngine(&engineObject, 0, 0, 0, 0, 0);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay slCreateEngine failed");
         return false;
     }
@@ -58,6 +65,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //初始化引擎对象
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay engineObject Realize failed");
         return false;
     }
@@ -68,6 +76,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //Object里面的哪个Interface
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineInterface);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay engineObject GetInterface failed");
         return false;
     }
@@ -76,6 +85,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     /****************创建混音器*******************/
     result = (*engineInterface)->CreateOutputMix(engineInterface, &mixture, 0, 0, 0);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay engineInterface CreateOutputMix failed");
         return false;
     }
@@ -84,6 +94,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //初始化混音器
     result = (*mixture)->Realize(mixture, SL_BOOLEAN_FALSE);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay mixture Realize failed");
         return false;
     }
@@ -117,6 +128,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
             req
     );
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay engineInterface CreateAudioPlayer failed");
         return false;
     }
@@ -126,6 +138,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //获取播放器接口
     result = (*playerItf)->GetInterface(playerItf, SL_IID_PLAY, &playerInterface);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay playerItf GetInterface SL_IID_PLAY failed");
         return false;
     }
@@ -133,6 +146,7 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //获取播放队列接口
     result = (*playerItf)->GetInterface(playerItf, SL_IID_BUFFERQUEUE, &pcmQueue);
     if (result != SL_RESULT_SUCCESS) {
+        mutex.unlock();
         XLOGE("SLAudioPlay playerItf GetInterface SL_IID_BUFFERQUEUE failed");
         return false;
     }
@@ -146,5 +160,63 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //启动队列
     (*pcmQueue)->Enqueue(pcmQueue, "", 1);
     XLOGI("SLAudioPlay play success");
+    mutex.unlock();
     return true;
 }
+
+void SLAudioPlay::Close(){
+    IAudioPlay::Clear();
+    mutex.lock();
+
+    //停止播放
+    if(playerInterface && (*playerInterface)){
+        (*playerInterface)->SetPlayState(playerInterface,SL_PLAYSTATE_STOPPED);
+    }
+
+    //清理播放队列
+    if(pcmQueue && (*pcmQueue)){
+        (*pcmQueue)->Clear(pcmQueue);
+    }
+
+    //销毁player对象
+    if(playerItf &&(*playerItf)){
+        (*playerItf)->Destroy(playerItf);
+    }
+
+    //销毁混音器
+    if(mixture && (*mixture)){
+        (*mixture)->Destroy(mixture);
+    }
+
+    //销毁播放引擎
+    if(engineObject && (*engineObject)){
+        (*engineObject)->Destroy(engineObject);
+    }
+
+    mutex.unlock();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

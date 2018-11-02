@@ -24,7 +24,39 @@ public:
     EGLContext context = EGL_NO_CONTEXT;
     EGLSurface surface = EGL_NO_SURFACE;
 
+    virtual void Close(){
+        mutex.lock();
+
+        if(display == EGL_NO_DISPLAY){
+            mutex.unlock();
+            return;
+        }
+
+        eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
+
+        if(surface != EGL_NO_SURFACE){
+            eglDestroySurface(display,surface);
+        }
+
+        if(context != EGL_NO_CONTEXT){
+            eglDestroyContext(display,context);
+        }
+
+        eglTerminate(display);
+
+        display = EGL_NO_DISPLAY;
+        context = EGL_NO_CONTEXT;
+        surface = EGL_NO_SURFACE;
+
+        mutex.unlock();
+    }
+
     virtual bool Init(void *win) {
+
+        Close();
+
+        mutex.lock();
+
         ANativeWindow *window = (ANativeWindow *) win;
 
         //初始化EGL
@@ -38,6 +70,7 @@ public:
          */
         display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         if (display == EGL_NO_DISPLAY) {
+            mutex.unlock();
             XLOGE("eglGetDisplay failed%d", eglGetError());
             return false;
         }
@@ -45,6 +78,7 @@ public:
 
         //初始化Display eglInitialize
         if (EGL_TRUE != eglInitialize(display, 0, 0)) {
+            mutex.unlock();
             XLOGE("eglInitialize failed");
             return false;
         }
@@ -62,6 +96,7 @@ public:
         EGLConfig config = 0;
         EGLint numConfigs = 0;
         if (EGL_TRUE != eglChooseConfig(display, configAttrList, &config, 1, &numConfigs)) {
+            mutex.unlock();
             XLOGE("eglChooseConfig false");
             return false;
         }
@@ -70,6 +105,7 @@ public:
         //创建Surface eglCreateWindowSurface /*EGL_NONE: Attrib list terminator */
         surface = eglCreateWindowSurface(display, config, window, NULL);
         if (surface == EGL_NO_SURFACE) {
+            mutex.unlock();
             XLOGE("eglCreateWindowSurface failed!");
             return false;
         }
@@ -80,6 +116,7 @@ public:
         const EGLint contextAttrList[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
         context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttrList);
         if (context == EGL_NO_CONTEXT) {
+            mutex.unlock();
             XLOGE("eglCreateContext failed!");
             return false;
         }
@@ -87,18 +124,23 @@ public:
 
         //绑定Context eglMakeCurrent
         if (EGL_TRUE != eglMakeCurrent(display, surface, surface, context)) {
+            mutex.unlock();
             XLOGE("eglMakeCurrent failed!");
             return false;
         }
         XLOGI("eglMakeCurrent success!");
+        mutex.unlock();
         return true;
     }
 
     virtual void Draw() {
+        mutex.lock();
         if (display == EGL_NO_DISPLAY || surface == EGL_NO_SURFACE) {
+            mutex.unlock();
             return;
         }
         eglSwapBuffers(display, surface);
+        mutex.unlock();
     }
 };
 

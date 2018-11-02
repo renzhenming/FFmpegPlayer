@@ -7,6 +7,8 @@ class SLAudioPlay : public IAudioPlay {
 public:
     virtual bool StartPlay(XParameter out);
 
+    virtual void Close();
+
     void PlayCall(void *bufqueue);
 
     SLAudioPlay();
@@ -16,6 +18,7 @@ public:
 protected:
     //内部空间用来拷贝音频数据
     unsigned char *buf = 0;
+    std::mutex mutex;
 };
 
 #endif

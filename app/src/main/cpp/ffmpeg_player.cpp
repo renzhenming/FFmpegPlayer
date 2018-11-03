@@ -101,6 +101,12 @@ Java_com_rzm_ffmpegplayer_OpenUrl_Open(JNIEnv *env, jobject instance, jstring pa
     env->ReleaseStringUTFChars(path,url);
 }
 
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_getCurrentPosition(JNIEnv *env, jclass instance) {
+    return IPlayerProxy::Get()->PlayPos();
+}
+
 static double r2d(AVRational r) {
     LOGI("r.num= %d r.den=%d", r.num, r.den);
     return r.num == 0 || r.den == 0 ? 0 : (double) r.num / (double) r.den;

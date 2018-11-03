@@ -8,10 +8,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.SeekBar;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Runnable {
 
     private View bt;
+    private SeekBar seek;
+    private Thread th;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,5 +43,27 @@ public class MainActivity extends AppCompatActivity {
 
             }
         } );
+
+        seek = (SeekBar) findViewById( R.id.aplayseek );
+        seek.setMax(1000);
+
+        //启动播放进度线程
+        th = new Thread(this);
+        th.start();
+    }
+
+
+
+    @Override
+    public void run() {
+        for(;;)
+        {
+            seek.setProgress((int)(FFmpegPlayer.getCurrentPosition()*1000));
+            try {
+                Thread.sleep( 40 );
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

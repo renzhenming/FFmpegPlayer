@@ -143,3 +143,20 @@ bool IPlayer::Start() {
     mutex.unlock();
     return true;
 }
+
+double IPlayer::PlayPos()
+{
+    double pos = 0.0;
+    mutex.lock();
+
+    int total = 0;
+    if(demux)
+        total = demux->totalMs;
+    if(total>0){
+        if(vdecode){
+            pos = (double)vdecode->pts/(double)total;
+        }
+    }
+    mutex.unlock();
+    return pos;
+}

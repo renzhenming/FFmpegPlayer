@@ -43,3 +43,16 @@ void IPlayerProxy::InitView(void *window) {
     }
     mutex.unlock();
 }
+
+//获取当前的播放进度 0.0 ~ 1.0
+double IPlayerProxy::PlayPos()
+{
+    double pos = 0.0;
+    mutex.lock();
+    if(player)
+    {
+        pos = player->PlayPos();
+    }
+    mutex.unlock();
+    return pos;
+}

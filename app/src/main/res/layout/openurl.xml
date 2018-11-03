@@ -45,8 +45,8 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:inputType="textPersonName"
-                android:text="rtmp://live.hkstv.hk.lxdns.com/live/hks"/>
-                <!--android:text="rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov"--> />
+                android:text="rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov"/>
+                <!--android:text="rtmp://live.hkstv.hk.lxdns.com/live/hks"/>-->
 
             <Button
                 android:id="@+id/playrtmp"

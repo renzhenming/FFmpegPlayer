@@ -28,7 +28,7 @@ surface和打开视频播放是两个线程进行的，当第二次点击播放�
 window在close中清理
 */
 void GLVideoView::SetRender(void *window) {
-XLOGI("GLVideoView::SetRender");
+    XLOGI("GLVideoView::SetRender");
     view = window;
 }
 

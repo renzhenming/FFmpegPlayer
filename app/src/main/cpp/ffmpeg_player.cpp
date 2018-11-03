@@ -74,6 +74,33 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, j
     IPlayerProxy::Get()->InitView(window);
 }
 
+
+/**
+重复打开报错：
+E/libOpenSLES: frameworks/wilhelm/src/itf/IPlay.c:38: pthread_mutex_lock_timeout_np returned 110
+E/XPlay: IDecode ::Main 从解码器种读取解码后的数据失败  frame.size=
+E/libEGL: eglCreateWindowSurface: native_window_api_connect (win=0xcbd7e008) failed (0xffffffed) (already connected to another API?)
+eglCreateWindowSurface:481 error 3003 (EGL_BAD_ALLOC)
+E/XPlay: eglCreateWindowSurface failed!
+XTexture init -- > EGL init failed
+call to OpenGL ES API with no current context (logged once per thread)
+
+原因分析
+再次打开视频的时候我们是从另一个页面退回到视频播放页面，此时surfaceCreated方法会再次回调，传递surface过来，但是要知道，传递
+surface和打开视频播放是两个线程进行的，当第二次点击播放按钮的时候，会立即重新调用Java_com_rzm_ffmpegplayer_OpenUrl_Open
+播放视频，但此时，surfaceCreated方法未必已经在打开之前传递了surface，导致，第二次播放视频使用了第一次传递的surface，大概原因就是这样
+*/
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_OpenUrl_Open(JNIEnv *env, jobject instance, jstring path) {
+    const char *url = env->GetStringUTFChars(path,0);
+    IPlayerProxy::Get()->Open(url);
+    IPlayerProxy::Get()->Start();
+
+    env->ReleaseStringUTFChars(path,url);
+}
+
 static double r2d(AVRational r) {
     LOGI("r.num= %d r.den=%d", r.num, r.den);
     return r.num == 0 || r.den == 0 ? 0 : (double) r.num / (double) r.den;
@@ -94,13 +121,13 @@ JNIEXPORT
 jint JNI_OnLoad(JavaVM *vm, void *res) {
 
     IPlayerProxy::Get()->Init(vm);
-    IPlayerProxy::Get()->Open("/sdcard/take.mp4");
+    /*IPlayerProxy::Get()->Open("/sdcard/take.mp4");
 
     IPlayerProxy::Get()->Open("/sdcard/Qiuyinong.mp4");
 
     IPlayerProxy::Get()->Open("/sdcard/1080.mp4");
 
-    IPlayerProxy::Get()->Start();
+    IPlayerProxy::Get()->Start();*/
 
     return JNI_VERSION_1_4;
 }

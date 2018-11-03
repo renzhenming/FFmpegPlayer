@@ -22,7 +22,6 @@ SLAudioPlay::~SLAudioPlay() {
 void SLAudioPlay::PlayCall(void *buf_queue) {
     if (!buf_queue) return;
     SLAndroidSimpleBufferQueueItf bf = (SLAndroidSimpleBufferQueueItf) buf_queue;
-    XLOGI("SLAudioPlay :: PlayCall");
     //阻塞
     XData d = GetData();
     if (d.size <= 0) {
@@ -32,7 +31,11 @@ void SLAudioPlay::PlayCall(void *buf_queue) {
     if (!buf) return;
     memcpy(buf, d.data, d.size);
     mutex.lock();
-    (*bf)->Enqueue(bf, buf, d.size);
+
+    //注意这里有一个bug，当打开一个视频之后，再重复打开一次，导致程序崩溃，原因是重复打开时，音频
+    //播放队列被清理，但是有可能这里还在进行enqueue,这个时候其实队列已经不在了，所以在这里做一层判断
+    if(pcmQueue && (*pcmQueue))
+        (*bf)->Enqueue(bf, buf, d.size);
     mutex.unlock();
     d.Drop();
 }
@@ -47,9 +50,9 @@ static void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
 }
 
 bool SLAudioPlay::StartPlay(XParameter out) {
-
+    XLOGI("SLAudioPlay begin");
     Close();
-
+    XLOGI("SLAudioPlay close finish");
     mutex.lock();
     /****************创建OpenSLES 引擎*******************/
 
@@ -166,32 +169,41 @@ bool SLAudioPlay::StartPlay(XParameter out) {
 
 void SLAudioPlay::Close(){
     IAudioPlay::Clear();
+    XLOGI("SLAudioPlay 开始关闭");
     mutex.lock();
 
     //停止播放
     if(playerInterface && (*playerInterface)){
         (*playerInterface)->SetPlayState(playerInterface,SL_PLAYSTATE_STOPPED);
     }
-
+    XLOGI("SLAudioPlay 停止播放");
     //清理播放队列
     if(pcmQueue && (*pcmQueue)){
         (*pcmQueue)->Clear(pcmQueue);
     }
-
+    XLOGI("SLAudioPlay 清理播放队列");
     //销毁player对象
     if(playerItf &&(*playerItf)){
         (*playerItf)->Destroy(playerItf);
     }
-
+    XLOGI("SLAudioPlay 销毁player对象");
     //销毁混音器
     if(mixture && (*mixture)){
         (*mixture)->Destroy(mixture);
     }
-
+    XLOGI("SLAudioPlay 销毁混音器");
     //销毁播放引擎
     if(engineObject && (*engineObject)){
         (*engineObject)->Destroy(engineObject);
     }
+    XLOGI("SLAudioPlay 销毁播放引擎 finish");
+
+    engineObject = NULL;
+    engineInterface = NULL;
+    mixture = NULL;
+    playerItf = NULL;
+    playerInterface = NULL;
+    pcmQueue = NULL;
 
     mutex.unlock();
 }

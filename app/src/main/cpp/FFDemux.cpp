@@ -220,7 +220,6 @@ XData FFDemux::Read() {
         return XData();
     }
     //XLOGI("pack size is %d ptss %lld",avPacket->size,avPacket->pts);
-    //为什么*avPacket可以强转成unsigned char*？TODO
     d.data = (unsigned char *) avPacket;
     d.size = avPacket->size;
 

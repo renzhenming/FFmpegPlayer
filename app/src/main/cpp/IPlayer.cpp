@@ -122,22 +122,24 @@ bool IPlayer::Start() {
     if (vdecode) {
         vdecode->Start();
     }
-
+    XLOGI("IPlayer::vdecode->Start() success!");
     if (!demux || !demux->Start()) {
         mutex.unlock();
         XLOGE("IPlayer::Start demux->Start failed!");
         return false;
     }
+    XLOGI("IPlayer::demux->Start() success!");
     if (adecode) {
         adecode->Start();
     }
+    XLOGI("IPlayer::adecode->Start() success!");
     if (audioPlay) {
         audioPlay->StartPlay(outParam);
     }
 
-
-    XLOGI("IPlayer::Start success!");
+    XLOGI("IPlayer::audioPlay->StartPlay(outParam) success!");
     XThread::Start();
+
     mutex.unlock();
     return true;
 }

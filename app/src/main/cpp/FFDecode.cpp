@@ -80,10 +80,11 @@ bool FFDecode::Open(XParameter xParameter, bool isHard) {
 }
 
 void FFDecode::Close(){
+    //清空我们设置的缓存队列
     IDecode::Clear();
     mutex.lock();
-
-    pts = 0;
+    //在IDecode::Clear();中已经做了pts = 0
+    //pts = 0;
     if(frame){
         av_frame_free(&frame);
     }
@@ -143,6 +144,7 @@ XData FFDecode::RecvFrame() {
     }
 
     XData data;
+
     data.data = (unsigned char *) frame;
 
     if (avCodecContext->codec_type == AVMEDIA_TYPE_VIDEO) {

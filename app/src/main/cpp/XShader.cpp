@@ -178,12 +178,12 @@ void XShader::Close(){
         glDeleteProgram(program);
     }
 
-    if(vsh){
-        glDeleteShader(vsh);
-    }
-
     if(fsh){
         glDeleteShader(fsh);
+    }
+
+    if(vsh){
+        glDeleteShader(vsh);
     }
 
     //释放材质

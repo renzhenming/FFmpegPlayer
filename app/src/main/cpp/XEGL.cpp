@@ -106,7 +106,7 @@ public:
         surface = eglCreateWindowSurface(display, config, window, NULL);
         if (surface == EGL_NO_SURFACE) {
             mutex.unlock();
-            XLOGE("eglCreateWindowSurface failed!");
+            XLOGE("eglCreateWindowSurface failed!%d",eglGetError());
             return false;
         }
         XLOGI("eglCreateWindowSurface success!");

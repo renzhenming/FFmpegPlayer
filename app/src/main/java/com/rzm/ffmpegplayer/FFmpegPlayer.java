@@ -18,6 +18,8 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
 
     public FFmpegPlayer(Context context, AttributeSet attrs) {
         super(context, attrs);
+        //android 8.0 需要设置,不设置会显示白屏
+        setRenderer( this );
     }
 
     /**
@@ -48,8 +50,10 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
 
         initView(holder.getSurface());
 
-        //android 8.0 需要设置,不设置会显示白屏
-        setRenderer( this );
+        //android 8.0 需要设置,不设置会显示白屏,放在这里会重复被调用，发生bug,(每次activity onResume都会)
+        //java.lang.IllegalStateException: setRenderer has already been called for this instance.
+        //所以把他放在构造方法中是最合适的
+        //setRenderer( this );
 
 
         //只有在绘制数据改变时才绘制view，可以防止GLSurfaceView帧重绘

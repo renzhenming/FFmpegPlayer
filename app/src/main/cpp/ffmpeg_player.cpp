@@ -106,9 +106,15 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_getCurrentPosition(JNIEnv *env, jclass in
     return IPlayerProxy::Get()->PlayPos();
 }
 extern "C"
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_pauseOrPlay(JNIEnv *env, jclass instance) {
     IPlayerProxy::Get()->SetPause(!IPlayerProxy::Get()->IsPause());
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_Seek(JNIEnv *env, jclass instance,jdouble position) {
+    IPlayerProxy::Get()->Seek(position);
 }
 
 static double r2d(AVRational r) {

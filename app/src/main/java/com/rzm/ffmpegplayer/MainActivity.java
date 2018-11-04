@@ -54,7 +54,22 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
         seek = (SeekBar) findViewById( R.id.aplayseek );
         seek.setMax(1000);
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                FFmpegPlayer.Seek( (double)seekBar.getProgress()/(double)seekBar.getMax() );
+            }
+        });
         //启动播放进度线程
         th = new Thread(this);
         th.start();

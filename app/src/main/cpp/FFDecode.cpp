@@ -79,6 +79,14 @@ bool FFDecode::Open(XParameter xParameter, bool isHard) {
     return true;
 }
 
+void FFDecode::Clear(){
+    IDecode::Clear();
+    mutex.lock();
+    if(avCodecContext)
+        avcodec_flush_buffers(avCodecContext);
+    mutex.unlock();
+}
+
 void FFDecode::Close(){
     //清空我们设置的缓存队列
     IDecode::Clear();

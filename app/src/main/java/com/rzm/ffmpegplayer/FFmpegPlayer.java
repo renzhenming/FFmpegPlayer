@@ -31,6 +31,7 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
 
     public native static double getCurrentPosition();
 
+    public native static void pauseOrPlay();
     @Override
     public void run() {
         //String sdPath = Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -87,4 +88,5 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
     public void onDrawFrame(GL10 gl) {
 
     }
+
 }

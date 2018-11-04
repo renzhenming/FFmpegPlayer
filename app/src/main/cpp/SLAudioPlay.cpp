@@ -160,9 +160,16 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     //设置为播放状态
     (*playerInterface)->SetPlayState(playerInterface, SL_PLAYSTATE_PLAYING);
 
+    //每次重新启动一个视频播放的时候会调用audioPlay->Stop();停止线程，此时isExit为true,然后再重新开启，对于音频方面会
+    //再次进入到IAudioPlay中的GetData中获取数据，而此时，isExit为true,循环无法进入，导致无法读取音频数据，所以这里要
+    //再开始播放前将isExit重新这只为false,
+    isExit = false;
+
     //启动队列
     (*pcmQueue)->Enqueue(pcmQueue, "", 1);
     XLOGI("SLAudioPlay play success");
+
+    XLOGI("SLAudioPlay play success isExit = false ");
     mutex.unlock();
     return true;
 }

@@ -15,6 +15,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
     private View bt;
     private SeekBar seek;
     private Thread th;
+    private FFmpegPlayer player;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +31,13 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
 
         setContentView( R.layout.activity_main );
+        player = (FFmpegPlayer) findViewById( R.id.player );
+        player.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FFmpegPlayer.pauseOrPlay();
+            }
+        });
         bt = findViewById( R.id.open_button );
         bt.setOnClickListener( new View.OnClickListener() {
             @Override

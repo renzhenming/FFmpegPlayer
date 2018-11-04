@@ -27,6 +27,12 @@ void IPlayer::InitView(void *window) {
  */
 void IPlayer::Main() {
     while(!isExit){
+
+        if(IsPause()){
+            XSleep(2);
+            continue;
+        }
+
         mutex.lock();
 
         if(!audioPlay || !vdecode){
@@ -89,6 +95,13 @@ void IPlayer::Close() {
         vdecode->Stop();
     if(adecode)
         adecode->Stop();
+    //IAudioPlay中有一个GetData的循环队列，由于这个循环是在OpenSLES的RegisterCallback
+    //中执行的一个死循环，所以导致就算是播放完成后它也不会退出，因此，在视频播放到最后的时候，由于队列中
+    //再也取不到数据了，所以while循环进入无限休眠状态，此时取重新打开视频，会失败，因为close销毁会失败
+    //这个循环是区别于我们通过XThread开启的循环的，因为XThread中的循环通过isExit和IsRunning进行管理
+    //而这个没有，所以我们仿照XThread的处理方式进行设置
+    if(audioPlay)
+        audioPlay->Stop();
     //清理缓冲队列
     if(vdecode)
         vdecode->Clear();
@@ -169,4 +182,19 @@ double IPlayer::PlayPos()
     }
     mutex.unlock();
     return pos;
+}
+
+void IPlayer::SetPause(bool isP){
+    mutex.lock();
+    XThread::SetPause(isP);
+    if(demux)
+        demux->SetPause(isP);
+    if(vdecode)
+        vdecode->SetPause(isP);
+    if(adecode)
+        adecode->SetPause(isP);
+    if(audioPlay)
+        audioPlay->SetPause(isP);
+    mutex.unlock();
+    XLOGI("SetPause finish");
 }

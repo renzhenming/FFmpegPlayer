@@ -42,6 +42,13 @@ void IDecode::Clear() {
 
 void IDecode::Main() {
     while (!isExit) {
+
+        if(IsPause()){
+            XSleep(2);
+            XLOGI("IDecode::Main 进入暂停状态");
+            continue;
+        }
+
         packsMutex.lock();
 
         //判断音视频同步
@@ -73,12 +80,12 @@ void IDecode::Main() {
 
         //发送数据到解码线程，一个数据包，可能解码多个结果
         if (this->SendPacket(pack)) {
-            XLOGI("IDecode ::Main 发送packet到线程解码成功 pack.size=%", pack.size);
+            XLOGI("IDecode ::Main 发送packet到线程解码成功 pack.size=%d", pack.size);
             while (!isExit) {
                 //从线程获取解码数据
                 XData frame = RecvFrame();
                 if (!frame.data) {
-                    XLOGE("IDecode ::Main 从解码器种读取解码后的数据失败  frame.size=%", frame.size);
+                    XLOGE("IDecode ::Main 从解码器种读取解码后的数据失败  frame.size=%d", frame.size);
                     break;
                 }
                 pts = frame.pts;
@@ -87,7 +94,7 @@ void IDecode::Main() {
                 this->Notify(frame);
             }
         } else {
-            XLOGE("IDecode ::Main 发送packet到线程解码失败 pack.size=%", pack.size);
+            XLOGE("IDecode ::Main 发送packet到线程解码失败 pack.size=%d", pack.size);
         }
         pack.Drop();
         packsMutex.unlock();

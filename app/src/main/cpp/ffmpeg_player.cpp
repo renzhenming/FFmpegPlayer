@@ -97,7 +97,6 @@ Java_com_rzm_ffmpegplayer_OpenUrl_Open(JNIEnv *env, jobject instance, jstring pa
     const char *url = env->GetStringUTFChars(path,0);
     IPlayerProxy::Get()->Open(url);
     IPlayerProxy::Get()->Start();
-    IPlayerProxy::Get()->Seek(0.5);
     env->ReleaseStringUTFChars(path,url);
 }
 
@@ -105,6 +104,11 @@ extern "C"
 JNIEXPORT jint JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_getCurrentPosition(JNIEnv *env, jclass instance) {
     return IPlayerProxy::Get()->PlayPos();
+}
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_pauseOrPlay(JNIEnv *env, jclass instance) {
+    IPlayerProxy::Get()->SetPause(!IPlayerProxy::Get()->IsPause());
 }
 
 static double r2d(AVRational r) {

@@ -19,9 +19,20 @@ public:
 
     }
 
+    //暂停
+    virtual void SetPause(bool isPause);
+
+    //暂停状态
+    virtual bool IsPause(){
+        isPausing = isPause;
+        return isPause;
+    }
+
 protected:
     bool isExit = false;
     bool isRunning = false;
+    bool isPause = false;
+    bool isPausing = false;
 
 private:
     void ThreadMain();

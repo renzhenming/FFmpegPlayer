@@ -26,6 +26,16 @@ bool IPlayerProxy::Open(const char *path) {
     return result;
 }
 
+bool IPlayerProxy::Seek(double position){
+    bool result = false;
+    mutex.lock();
+    if(player){
+        player->Seek(position);
+    }
+    mutex.unlock();
+    return result;
+}
+
 bool IPlayerProxy::Start() {
     bool result = false;
     mutex.lock();

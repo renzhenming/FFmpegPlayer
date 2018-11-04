@@ -144,6 +144,16 @@ bool IPlayer::Start() {
     return true;
 }
 
+bool IPlayer::Seek(double position){
+    bool result = false;
+    mutex.lock();
+    if(demux){
+        result = demux->Seek(position);
+    }
+    mutex.unlock();
+    return result;
+}
+
 double IPlayer::PlayPos()
 {
     double pos = 0.0;

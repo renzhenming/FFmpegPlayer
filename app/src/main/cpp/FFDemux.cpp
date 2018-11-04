@@ -95,6 +95,35 @@ FFDemux::FFDemux() {
     }
 }
 
+//position可以看作一个百分比，不是具体的位置
+bool FFDemux::Seek(double position){
+    if(position < 0 || position >1){
+        XLOGE("seek position must between 0.0~1.0");
+        return false;
+    }
+
+    bool result = false;
+
+    mutex.lock();
+
+    if(!avFormatContext){
+        mutex.unlock();
+        return false;
+    }
+
+    //清理读取的缓存
+    avformat_flush(avFormatContext);
+
+    long long seekPts = 0;
+    seekPts = avFormatContext->streams[videoStream]->duration*position;
+
+    result = av_seek_frame(avFormatContext,videoStream,seekPts,AVSEEK_FLAG_FRAME|AVSEEK_FLAG_BACKWARD);
+
+    mutex.unlock();
+
+    return result;
+}
+
 /**
  * 打开文件，或者流媒体 rmtp http rtsp
  * @param url

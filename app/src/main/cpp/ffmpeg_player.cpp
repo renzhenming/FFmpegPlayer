@@ -97,7 +97,7 @@ Java_com_rzm_ffmpegplayer_OpenUrl_Open(JNIEnv *env, jobject instance, jstring pa
     const char *url = env->GetStringUTFChars(path,0);
     IPlayerProxy::Get()->Open(url);
     IPlayerProxy::Get()->Start();
-
+    IPlayerProxy::Get()->Seek(0.5);
     env->ReleaseStringUTFChars(path,url);
 }
 

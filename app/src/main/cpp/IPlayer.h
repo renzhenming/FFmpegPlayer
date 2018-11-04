@@ -21,6 +21,8 @@ public:
 
     virtual bool Open(const char *path);
 
+    virtual bool Seek(double position);
+
     virtual void Close();
 
     virtual bool Start();

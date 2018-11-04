@@ -20,6 +20,8 @@ public:
 
     virtual bool Open(const char *path);
 
+    virtual bool Seek(double position);
+
     virtual bool Start();
 
     virtual void InitView(void *window);

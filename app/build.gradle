@@ -5,7 +5,7 @@ android {
     buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "com.rzm.ffmpegplayer"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
@@ -51,4 +51,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
+    compile 'com.github.yangjie10930:EpMedia:v0.9.5'
 }

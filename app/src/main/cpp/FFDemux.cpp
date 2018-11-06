@@ -135,6 +135,8 @@ bool FFDemux::Open(const char *url) {
     mutex.lock();
     //打开视频文件
     XLOGI("begin open file %s", url);
+
+    //avformat_close_input何时调用？
     int result = avformat_open_input(&avFormatContext, url, 0, 0);
     if (result != 0) {
         mutex.unlock();

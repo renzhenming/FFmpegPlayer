@@ -117,6 +117,8 @@ bool IPlayer::Start() {
 
 
 void IPlayer::Close() {
+    //如果当前是暂停状态（假如用户先点击了暂停再重新打开视频），关闭这个状态
+    SetPause(false);
     mutex.lock();
     //先关闭主体线程再清理观察者线程
     XThread::Stop();

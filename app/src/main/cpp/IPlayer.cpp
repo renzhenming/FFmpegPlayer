@@ -158,7 +158,7 @@ void IPlayer::Close() {
     mutex.unlock();
 }
 
-bool IPlayer::Seek(double position) {
+bool IPlayer::Seek(double percent) {
     bool result = false;
 
     if (!demux) return result;
@@ -186,10 +186,10 @@ bool IPlayer::Seek(double position) {
         audioPlay->Clear();
 
     //跳转到关键帧
-    result = demux->Seek(position);
+    result = demux->Seek(percent);
 
     //解码到实际需要显示的帧
-    int seekPts = position * demux->totalMs;
+    int seekPts = percent * demux->totalMs;
 
     while (!isExit) {
         XData data = demux->Read();

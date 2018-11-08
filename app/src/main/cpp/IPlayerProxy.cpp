@@ -26,11 +26,11 @@ bool IPlayerProxy::Open(const char *path) {
     return result;
 }
 
-bool IPlayerProxy::Seek(double position){
+bool IPlayerProxy::Seek(double percent){
     bool result = false;
     mutex.lock();
     if(player){
-        player->Seek(position);
+        player->Seek(percent);
     }
     mutex.unlock();
     return result;

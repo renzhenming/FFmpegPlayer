@@ -66,15 +66,34 @@ public:
      */
     virtual bool Start();
 
-    virtual bool Seek(double position);
+    /**
+     * 传入当前总时长的百分比 0.0 ~ 1.0，seek到这个位置播放
+     * @param position
+     * @return
+     */
+    virtual bool Seek(double percent);
 
+    /**
+     * 在Android平台上，负责传入ANativeWindow 对象，用于界面显示
+     * @param window
+     */
     virtual void InitView(void *window);
 
-    //获取当前的播放进度 0.0 ~ 1.0
+    /**
+     * 获取当前的播放进度 仍然是百分比 0.0 ~ 1.0
+     */
     virtual double PlayPos();
 
+    /**
+     * 暂停播放
+     * @param isP
+     */
     virtual void SetPause(bool isP);
 
+    /**
+     * 用于判断当前是否是暂停状态
+     * @return
+     */
     virtual bool IsPause();
 
 protected:

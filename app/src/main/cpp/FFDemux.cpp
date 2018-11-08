@@ -95,10 +95,12 @@ FFDemux::FFDemux() {
     }
 }
 
-//position可以看作一个百分比，不是具体的位置
-bool FFDemux::Seek(double position){
-    if(position < 0 || position >1){
-        XLOGE("seek position must between 0.0~1.0");
+/**
+ * position是总时长的百分比，不是具体的位置
+ */
+bool FFDemux::Seek(double percent){
+    if(percent < 0 || percent >1){
+        XLOGE("FFDemux::Seek seek position must between 0.0~1.0");
         return false;
     }
 
@@ -115,7 +117,9 @@ bool FFDemux::Seek(double position){
     avformat_flush(avFormatContext);
 
     long long seekPts = 0;
-    seekPts = avFormatContext->streams[videoStream]->duration*position;
+
+    //总时间*seek百分比 = seek时间点
+    seekPts = avFormatContext->streams[videoStream]->duration*percent;
 
     result = av_seek_frame(avFormatContext,videoStream,seekPts,AVSEEK_FLAG_FRAME|AVSEEK_FLAG_BACKWARD);
 

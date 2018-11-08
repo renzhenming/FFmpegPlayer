@@ -21,7 +21,7 @@ public:
 
     virtual bool Open(const char *path);
 
-    virtual bool Seek(double position);
+    virtual bool Seek(double percent);
 
     virtual void Close();
 

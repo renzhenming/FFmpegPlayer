@@ -31,7 +31,7 @@ void IDecode::Update(XData packet) {
 
 void IDecode::Clear() {
     packsMutex.lock();
-    while(!packs.empty()){
+    while (!packs.empty()) {
         packs.front().Drop();
         packs.pop_front();
     }
@@ -43,58 +43,57 @@ void IDecode::Clear() {
 void IDecode::Main() {
     while (!isExit) {
 
-        if(IsPause()){
+        //判断是否暂停解码
+        if (IsPause()) {
             XSleep(2);
-            XLOGI("IDecode::Main 进入暂停状态");
+            XLOGI("IDecode::Main pause");
             continue;
         }
 
         packsMutex.lock();
 
-        //判断音视频同步
+        //判断音视频同步，视频同步音频
         if (isVideo && synPts > 0) {
             if (synPts < pts) {
-                XLOGI("音视频同步..等待.. 视频pts = %d 音频pts=%d", synPts, pts);
+                XLOGI("IDecode::Main video waiting for audio,audio pts = "
+                              "%d video pts=%d", synPts, pts);
                 packsMutex.unlock();
                 XSleep(1);
                 continue;
-            }else{
-                XLOGI("音视频同步..无需等待.. 视频pts = %d 音频pts=%d", synPts, pts);
             }
         }
 
+        //如果队列为空，则进入等待状态
         if (packs.empty()) {
-            XLOGI("IDecode ::Main 从队列种取packet,队列为空，进入等待状态");
+            XLOGI("IDecode ::Main decode list is null ,waiting ... ");
             //如果队列中没有数据，则线程休眠
             packsMutex.unlock();
             XSleep(1);
             continue;
         }
 
-        //取出packet
+        //解码队列中有数据
         XData pack = packs.front();
 
-        XLOGI("IDecode ::Main 从队列中取packet,size=%d", pack.size);
+        XLOGI("IDecode ::Main decode list catch packet,size=%d", pack.size);
         //从队列移除
         packs.pop_front();
 
         //发送数据到解码线程，一个数据包，可能解码多个结果
         if (this->SendPacket(pack)) {
-            XLOGI("IDecode ::Main 发送packet到线程解码成功 pack.size=%d", pack.size);
             while (!isExit) {
                 //从线程获取解码数据
                 XData frame = RecvFrame();
                 if (!frame.data) {
-                    XLOGE("IDecode ::Main 从解码器种读取解码后的数据失败  frame.size=%d", frame.size);
                     break;
                 }
                 pts = frame.pts;
-                XLOGI("IDecode ::Main 从解码器种读取解码后的数据成功 开始通知观察者 frame.size = %d", frame.size);
+                XLOGI("IDecode ::Main decode frame success frame.size = %d", frame.size);
                 //发送数据给观察者
                 this->Notify(frame);
             }
         } else {
-            XLOGE("IDecode ::Main 发送packet到线程解码失败 pack.size=%d", pack.size);
+            XLOGE("IDecode ::Main decode frame failed");
         }
         pack.Drop();
         packsMutex.unlock();

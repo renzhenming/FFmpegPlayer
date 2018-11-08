@@ -38,9 +38,11 @@ XData IAudioPlay::GetData() {
     XData d;
     isRunning = true;
     while (!isExit) {
+
+        //判断是否暂停
         if(IsPause()){
             XSleep(2);
-            XLOGI("IAudioPlay::GetData 进入暂停状态");
+            XLOGI("IAudioPlay::GetData pause");
             continue;
         }
         framesMutex.lock();
@@ -54,7 +56,6 @@ XData IAudioPlay::GetData() {
         framesMutex.unlock();
         XSleep(1);
     }
-    XLOGI("SLAudioPlay IAudioPlay::GetData 进入暂停状态");
     isRunning = false;
     return d;
 }

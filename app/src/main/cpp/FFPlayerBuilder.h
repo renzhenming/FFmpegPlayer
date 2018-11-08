@@ -8,6 +8,10 @@ class FFPlayerBuilder : public IPlayerBuilder {
 public:
     static void InitHard(void *vm);
 
+    /**
+     * 单例构造对象
+     * @return
+     */
     static FFPlayerBuilder *Get() {
         static FFPlayerBuilder ff;
         return &ff;

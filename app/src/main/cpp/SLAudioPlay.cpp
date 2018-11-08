@@ -50,9 +50,9 @@ static void PcmCall(SLAndroidSimpleBufferQueueItf bf, void *context) {
 }
 
 bool SLAudioPlay::StartPlay(XParameter out) {
-    XLOGI("SLAudioPlay begin");
+    XLOGI("SLAudioPlay::StartPlay begin");
     Close();
-    XLOGI("SLAudioPlay close finish");
+    XLOGI("SLAudioPlay::StartPlay close finish");
     mutex.lock();
     /****************创建OpenSLES 引擎*******************/
 
@@ -60,19 +60,19 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     SLresult result = slCreateEngine(&engineObject, 0, 0, 0, 0, 0);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay slCreateEngine failed");
+        XLOGE("SLAudioPlay::StartPlay slCreateEngine failed");
         return false;
     }
-    XLOGI("SLAudioPlay slCreateEngine success");
+    XLOGI("SLAudioPlay::StartPlay slCreateEngine success");
 
     //初始化引擎对象
     result = (*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay engineObject Realize failed");
+        XLOGE("SLAudioPlay::StartPlay engineObject Realize failed");
         return false;
     }
-    XLOGI("SLAudioPlay engineObject Realize success");
+    XLOGI("SLAudioPlay::StartPlay engineObject Realize success");
 
     //获取引擎接口
     //一个Object里面可能包含了多个Interface,所以GetInterface方法有个SLInterfaceID参数来指定到的需要获取
@@ -80,28 +80,28 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineInterface);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay engineObject GetInterface failed");
+        XLOGE("SLAudioPlay::StartPlay engineObject GetInterface failed");
         return false;
     }
-    XLOGI("SLAudioPlay engineObject GetInterface success");
+    XLOGI("SLAudioPlay::StartPlay engineObject GetInterface success");
 
     /****************创建混音器*******************/
     result = (*engineInterface)->CreateOutputMix(engineInterface, &mixture, 0, 0, 0);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay engineInterface CreateOutputMix failed");
+        XLOGE("SLAudioPlay::StartPlay engineInterface CreateOutputMix failed");
         return false;
     }
-    XLOGI("SLAudioPlay engineInterface CreateOutputMix success");
+    XLOGI("SLAudioPlay::StartPlay engineInterface CreateOutputMix success");
 
     //初始化混音器
     result = (*mixture)->Realize(mixture, SL_BOOLEAN_FALSE);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay mixture Realize failed");
+        XLOGE("SLAudioPlay::StartPlay mixture Realize failed");
         return false;
     }
-    XLOGI("SLAudioPlay mixture Realize success");
+    XLOGI("SLAudioPlay::StartPlay mixture Realize success");
 
     //创建播放器
     SLDataLocator_AndroidSimpleBufferQueue queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 10};
@@ -132,28 +132,28 @@ bool SLAudioPlay::StartPlay(XParameter out) {
     );
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay engineInterface CreateAudioPlayer failed");
+        XLOGE("SLAudioPlay::StartPlay engineInterface CreateAudioPlayer failed");
         return false;
     }
-    XLOGI("SLAudioPlay engineInterface CreateAudioPlayer success");
+    XLOGI("SLAudioPlay::StartPlay engineInterface CreateAudioPlayer success");
     //实例化播放器
     (*playerItf)->Realize(playerItf, SL_BOOLEAN_FALSE);
     //获取播放器接口
     result = (*playerItf)->GetInterface(playerItf, SL_IID_PLAY, &playerInterface);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay playerItf GetInterface SL_IID_PLAY failed");
+        XLOGE("SLAudioPlay::StartPlay playerItf GetInterface SL_IID_PLAY failed");
         return false;
     }
-    XLOGI("SLAudioPlay playerItf GetInterface SL_IID_PLAY success");
+    XLOGI("SLAudioPlay::StartPlay playerItf GetInterface SL_IID_PLAY success");
     //获取播放队列接口
     result = (*playerItf)->GetInterface(playerItf, SL_IID_BUFFERQUEUE, &pcmQueue);
     if (result != SL_RESULT_SUCCESS) {
         mutex.unlock();
-        XLOGE("SLAudioPlay playerItf GetInterface SL_IID_BUFFERQUEUE failed");
+        XLOGE("SLAudioPlay::StartPlay playerItf GetInterface SL_IID_BUFFERQUEUE failed");
         return false;
     }
-    XLOGI("SLAudioPlay playerItf GetInterface SL_IID_BUFFERQUEUE success");
+    XLOGI("SLAudioPlay::StartPlay playerItf GetInterface SL_IID_BUFFERQUEUE success");
     //设置回调函数
     (*pcmQueue)->RegisterCallback(pcmQueue, PcmCall, this);
 
@@ -167,9 +167,8 @@ bool SLAudioPlay::StartPlay(XParameter out) {
 
     //启动队列
     (*pcmQueue)->Enqueue(pcmQueue, "", 1);
-    XLOGI("SLAudioPlay play success");
+    XLOGI("SLAudioPlay::StartPlay play success");
 
-    XLOGI("SLAudioPlay play success isExit = false ");
     mutex.unlock();
     return true;
 }

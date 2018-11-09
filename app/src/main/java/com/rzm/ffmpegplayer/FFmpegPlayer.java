@@ -1,8 +1,8 @@
 package com.rzm.ffmpegplayer;
 
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.opengl.GLSurfaceView;
-import android.os.Environment;
 import android.util.AttributeSet;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -10,7 +10,7 @@ import android.view.SurfaceHolder;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolder.Callback,GLSurfaceView.Renderer{
+public class FFmpegPlayer extends GLSurfaceView implements SurfaceHolder.Callback,GLSurfaceView.Renderer{
 
     static {
         System.loadLibrary("ffmpeg");
@@ -18,61 +18,51 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
 
     public FFmpegPlayer(Context context, AttributeSet attrs) {
         super(context, attrs);
+
         //android 8.0 需要设置,不设置会显示白屏
+        //只有在绘制数据改变时才绘制view，可以防止GLSurfaceView帧重绘
+        //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         setRenderer( this );
     }
 
     /**
-     * 播放视频
+     * 获取当前播放进度百分比，不是具体的播放时间点
+     * @return
      */
-    public native void playVideo(String url,Surface surface);
-    public native void playAudio(String url);
-    public native void initOpenGL(String url,Surface surface);
-
     public native static double getCurrentPosition();
 
-    public native static void pauseOrPlay();
+    /**
+     * 暂停或开始播放，如果当前正在播放，则暂停，如果当前已经暂停，则重新开始播放
+     */
+    public native static void pause();
 
+    /**
+     * 拖到一定的位置播放，这个位置是指当前播放进度的百分比
+     * @param v
+     */
+    public native static void seekTo(double v);
 
-    public native static void Seek(double v);
-
-    public native static void Open(String path);
-    @Override
-    public void run() {
-        //String sdPath = Environment.getExternalStorageDirectory().getAbsolutePath();
-        //String videoPath = sdPath +"/1080.mp4";
-        //String audioPath = sdPath +"/test.pcm";
-        //String yuvPath = sdPath +"/out.yuv";
-        //String yuvPath2 = sdPath +"/176x144.yuv";
-        //String yuvPath3 = sdPath +"/352x288.yuv";
-        //String yuvPath4 = sdPath +"/352x288_2.yuv";
-        //initOpenGL(yuvPath3,getHolder().getSurface());
-        //playVideo(videoPath,getHolder().getSurface());
-        //playAudio(audioPath);
-    }
+    /**
+     * 开始播放
+     * @param path 视频路径，可以是本地视频或者网络视频
+     */
+    public native static void start(String path);
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        //new Thread( this ).start();
-        //初始化opengl egl 显示
-
         initView(holder.getSurface());
-
-        //android 8.0 需要设置,不设置会显示白屏,放在这里会重复被调用，发生bug,(每次activity onResume都会)
-        //java.lang.IllegalStateException: setRenderer has already been called for this instance.
-        //所以把他放在构造方法中是最合适的
-        //setRenderer( this );
-
-
-        //只有在绘制数据改变时才绘制view，可以防止GLSurfaceView帧重绘
-        //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-
     }
 
     private native void initView(Surface surface);
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+
+        MediaPlayer player = new MediaPlayer();
+        player.start();
+        player.seekTo(1);
+        player.pause();
+        player.getCurrentPosition();
     }
 
     @Override
@@ -93,5 +83,12 @@ public class FFmpegPlayer extends GLSurfaceView implements Runnable,SurfaceHolde
     public void onDrawFrame(GL10 gl) {
 
     }
+
+    /**
+     * 播放视频
+     */
+    public native void playVideo(String url,Surface surface);
+    public native void playAudio(String url);
+    public native void initOpenGL(String url,Surface surface);
 
 }

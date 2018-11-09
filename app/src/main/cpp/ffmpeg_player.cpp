@@ -67,7 +67,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, j
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_FFmpegPlayer_Open(JNIEnv *env, jclass instance, jstring path) {
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_start(JNIEnv *env, jclass instance, jstring path) {
     const char *url = env->GetStringUTFChars(path, 0);
     IPlayerProxy::Get()->Open(url);
     IPlayerProxy::Get()->Start();
@@ -82,13 +82,13 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_getCurrentPosition(JNIEnv *env, jclass in
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_FFmpegPlayer_pauseOrPlay(JNIEnv *env, jclass instance) {
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_pause(JNIEnv *env, jclass instance) {
     IPlayerProxy::Get()->SetPause(!IPlayerProxy::Get()->IsPause());
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_FFmpegPlayer_Seek(JNIEnv *env, jclass instance, jdouble position) {
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_seekTo(JNIEnv *env, jclass instance, jdouble position) {
     IPlayerProxy::Get()->Seek(position);
 }
 

@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
         player.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FFmpegPlayer.pauseOrPlay();
+                FFmpegPlayer.pause();
             }
         });
         bt = findViewById( R.id.open_button );
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                FFmpegPlayer.Seek( (double)seekBar.getProgress()/(double)seekBar.getMax() );
+                FFmpegPlayer.seekTo( (double)seekBar.getProgress()/(double)seekBar.getMax() );
             }
         });
         //启动播放进度线程

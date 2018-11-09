@@ -60,7 +60,7 @@ public class OpenUrl extends AppCompatActivity {
                     public void onClick(View view) {
                         EditText t = (EditText) findViewById(R.id.fileurl);
                         //用户输入的URL，打开视频
-                        FFmpegPlayer.Open(t.getText().toString());
+                        FFmpegPlayer.start(t.getText().toString());
                         //关闭当前窗口
                         finish();
                     }
@@ -73,7 +73,7 @@ public class OpenUrl extends AppCompatActivity {
                     public void onClick(View view) {
                         EditText t = (EditText) findViewById(R.id.rtmpurl);
                         //用户输入的URL，打开视频
-                        FFmpegPlayer.Open(t.getText().toString());
+                        FFmpegPlayer.start(t.getText().toString());
                         //关闭当前窗口
                         finish();
                     }

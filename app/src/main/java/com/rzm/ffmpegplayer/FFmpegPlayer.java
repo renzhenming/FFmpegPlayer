@@ -58,11 +58,6 @@ public class FFmpegPlayer extends GLSurfaceView implements SurfaceHolder.Callbac
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
 
-        MediaPlayer player = new MediaPlayer();
-        player.start();
-        player.seekTo(1);
-        player.pause();
-        player.getCurrentPosition();
     }
 
     @Override

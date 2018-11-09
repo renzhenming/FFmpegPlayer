@@ -12,13 +12,12 @@ void IAudioPlay::Update(XData data) {
 
         //队列长度超过极值，进入等待状态
         if (frames.size() > maxFrames) {
-            XLOGI("IAudioPlay::Update 音频队列满，进入等待状态");
+            XLOGI("IAudioPlay::Update audio list is full ,waiting...");
             framesMutex.unlock();
             XSleep(1);
             continue;
         }
         frames.push_back(data);
-        XLOGI("IAudioPlay::Update 加入音频队列");
         framesMutex.unlock();
         break;
     }

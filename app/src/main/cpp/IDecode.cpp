@@ -18,11 +18,11 @@ void IDecode::Update(XData packet) {
             //log 报错（引用了packs的缘故） error: reference to non-static member function must be called;
             //did you mean to call it with no arguments?
             //XLOGI("IDecode::Update 解封装后将packet加入缓冲队列，当前队列size= %d ",packs.size);
-            XLOGI("IDecode::Update 解封装后将packet加入缓冲队列");
+            XLOGI("IDecode::Update demux success and put packet into list");
             packsMutex.unlock();
             break;
         } else {
-            XLOGI("IDecode::Update 解封装后队列长度达到极值，等待解码器消费packet");
+            XLOGI("IDecode::Update list is full,waiting...");
         }
         packsMutex.unlock();
         XSleep(1);

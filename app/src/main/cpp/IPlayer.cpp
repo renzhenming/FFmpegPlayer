@@ -62,12 +62,10 @@ bool IPlayer::Open(const char *path) {
     //解码，解码可能不需要，解封之后可能就是原始数据，这种情况不需要解码，所以解码失败也不要return
     if (!vdecode || !vdecode->Open(demux->GetVParam(), isHardDecode)) {
         XLOGE("IPlayer::Open vdecode->Open %s failed!", path);
-        //return false;
     }
 
     if (!adecode || !adecode->Open(demux->GetAParam())) {
         XLOGE("IPlayer::Open adecode->Open %s failed!", path);
-        //return false;
     }
 
     //重采样，有可能不需要，解码后或者解封装后可能就是可以直接播放的数据

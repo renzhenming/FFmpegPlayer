@@ -1,3 +1,5 @@
+
+
 /***************************************************************************************************
 **  neon 单线程下解码视频结果
 **       每秒帧数27~68
@@ -18,33 +20,23 @@
  *       每秒解码帧数46~85，线程数对帧率无影响，因为硬解码帧率是固定的
  *       CPU和内存的占用可忽略不计
 ** ************************************************************************************************/
+
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,"ffmpeg_player_warn",__VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_error",__VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"ffmpeg_player_info",__VA_ARGS__)
+
 #include <jni.h>
 #include <android/log.h>
 #include <string>
 //播放视频
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
-
 //播放音频
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
-
 //OpenGLES EGL
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
-
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,"ffmpeg_player_warn",__VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_error",__VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"ffmpeg_player_info",__VA_ARGS__)
-#define LOGD(...) __android_log_print(ANDROID_LOG_ERROR,"ffmpeg_player_info",__VA_ARGS__)
-
-//千万记住，ffmpeg是C语言编写的，在C++中使用必须开启开启混合编译，不然会一直报错，
-//undefined reference to 'xxxx'
-
-//extern "C"的主要作用就是为了能够正确实现C++代码调用其他C语言代码。加上extern "C"后，会指示编译器这部分代码按
-//C语言的进行编译，而不是C++的。由于C++支持函数重载，因此编译器编译函数的过程中会将函数的参数类型也加到编
-//译后的代码中，而不仅仅是函数名；而C语言并不支持函数重载，因此编译C语言代码的函数时不会带上函数的参数类
-//型，一般之包括函数名。
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -52,7 +44,6 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 };
-
 
 #include "FFDemux.h"
 #include "IObserver.h"
@@ -69,10 +60,46 @@ extern "C" {
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_rzm_ffmpegplayer_FFmpegPlayer_initView(JNIEnv *env, jobject instance, jobject surface) {
-
     ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
     IPlayerProxy::Get()->InitView(window);
 }
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_Open(JNIEnv *env, jclass instance, jstring path) {
+    const char *url = env->GetStringUTFChars(path, 0);
+    IPlayerProxy::Get()->Open(url);
+    IPlayerProxy::Get()->Start();
+    env->ReleaseStringUTFChars(path, url);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_getCurrentPosition(JNIEnv *env, jclass instance) {
+    return IPlayerProxy::Get()->PlayPos();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_pauseOrPlay(JNIEnv *env, jclass instance) {
+    IPlayerProxy::Get()->SetPause(!IPlayerProxy::Get()->IsPause());
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_rzm_ffmpegplayer_FFmpegPlayer_Seek(JNIEnv *env, jclass instance, jdouble position) {
+    IPlayerProxy::Get()->Seek(position);
+}
+
+extern "C"
+JNIEXPORT
+jint JNI_OnLoad(JavaVM *vm, void *res) {
+    IPlayerProxy::Get()->Init(vm);
+    return JNI_VERSION_1_4;
+}
+
+
 
 
 /**
@@ -91,32 +118,6 @@ surface和打开视频播放是两个线程进行的，当第二次点击播放�
 播放视频，但此时，surfaceCreated方法未必已经在打开之前传递了surface，导致，第二次播放视频使用了第一次传递的surface，大概原因就是这样
 */
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_OpenUrl_Open(JNIEnv *env, jobject instance, jstring path) {
-    const char *url = env->GetStringUTFChars(path,0);
-    IPlayerProxy::Get()->Open(url);
-    IPlayerProxy::Get()->Start();
-    env->ReleaseStringUTFChars(path,url);
-}
-
-extern "C"
-JNIEXPORT jint JNICALL
-Java_com_rzm_ffmpegplayer_FFmpegPlayer_getCurrentPosition(JNIEnv *env, jclass instance) {
-    return IPlayerProxy::Get()->PlayPos();
-}
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_FFmpegPlayer_pauseOrPlay(JNIEnv *env, jclass instance) {
-    IPlayerProxy::Get()->SetPause(!IPlayerProxy::Get()->IsPause());
-}
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_rzm_ffmpegplayer_FFmpegPlayer_Seek(JNIEnv *env, jclass instance,jdouble position) {
-    IPlayerProxy::Get()->Seek(position);
-}
-
 static double r2d(AVRational r) {
     LOGI("r.num= %d r.den=%d", r.num, r.den);
     return r.num == 0 || r.den == 0 ? 0 : (double) r.num / (double) r.den;
@@ -131,94 +132,6 @@ long long GetNowMs() {
     long long t = sec * 1000 + tv.tv_usec / 1000;
     return t;
 }
-
-extern "C"
-JNIEXPORT
-jint JNI_OnLoad(JavaVM *vm, void *res) {
-
-    IPlayerProxy::Get()->Init(vm);
-    /*IPlayerProxy::Get()->Open("/sdcard/take.mp4");
-
-    IPlayerProxy::Get()->Open("/sdcard/Qiuyinong.mp4");
-
-    IPlayerProxy::Get()->Open("/sdcard/1080.mp4");
-
-    IPlayerProxy::Get()->Start();*/
-
-    return JNI_VERSION_1_4;
-}
-
-/*
-IVideoView *view = NULL;
-extern "C"
-JNIEXPORT
-jint JNI_OnLoad(JavaVM *vm, void *res) {
-    //av_jni_set_java_vm(vm, 0);
-    FFDecode::InitHard(vm);
-
-
-    //FFDemux创建时会做一些初始化的动作
-        IDemux *demux = new FFDemux();
-        //解封装，这一步执行之后，会得到AVFormatContext上下文对象，同时音视频
-        //轨道index也会被赋值
-        //demux->Open("/sdcard/1080.mp4");
-
-        IDecode *videoDecode = new FFDecode();
-        //打开视频解码器
-        //videoDecode->Open(demux->GetVParam(),true);
-
-        IDecode *audioDecode = new FFDecode();
-        //打开音频解码器
-        //audioDecode->Open(demux->GetAParam());
-
-        //把视频解码器和音频解码器设置到解封装器的观察者，这样，当解封装完成之后，
-        //解码器会收到解封装之后的数据XData,开始解码
-        demux->AddObserver(videoDecode);
-        demux->AddObserver(audioDecode);
-
-        //创建播放器
-        view = new GLVideoView();
-        //把播放器添加到解码器的观察者队列中，解码一帧完成，播放器就会立即收到
-        //解码数据开始进行播放
-        videoDecode->AddObserver(view);
-
-        //创建音频重采样对象
-        IResample *resample = new FFResample();
-        XParameter audioOutParam = demux->GetAParam();
-
-        //初始化音频重采样，可以通过第二个参数设置输出的声道数和采样率，这里默认使用源音频的参数设置
-        //resample->Open(demux->GetAParam(),audioOutParam);
-        //将重采样器添加到音频解码器的观察者队列，音频解码成功之后会收到数据开始重采样
-        audioDecode->AddObserver(resample);
-
-        //创建音频播放器
-        IAudioPlay *audioPlay = new SLAudioPlay();
-        //将音频播放器添加到重采样器的观察者队列，重采样成功之后开始播放音频
-        resample->AddObserver(audioPlay);
-
-        //初始化OpenSLES进行音频播放
-        //audioPlay->StartPlay(audioOutParam);
-
-        //解封装器开始解封装视频文件，解封装成功之后加入队列(解码器中内置队列)，队列达到极值后进入等待状态
-        //demux->Start();
-        //视频解码器开始从队列中取出数据解码，如果队列为空则进入等待状态，
-        //videoDecode->Start();
-        //音频解码器开始从队列中取出数据解码，如果队列为空则进入等待状态，
-        //audioDecode->Start();
-
-    IPlayer::Get()->demux = demux;
-    IPlayer::Get()->adecode = audioDecode;
-    IPlayer::Get()->vdecode = videoDecode;
-    IPlayer::Get()->videoView = view;
-    IPlayer::Get()->resample = resample;
-    IPlayer::Get()->audioPlay = audioPlay;
-
-
-    IPlayer::Get()->Open("/sdcard/1080.mp4");
-    IPlayer::Get()->Start();
-
-    return JNI_VERSION_1_4;
-}*/
 
 /**
  * 播放视频，支持本地和网络两种

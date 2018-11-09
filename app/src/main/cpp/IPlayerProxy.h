@@ -75,6 +75,7 @@ public:
 
     /**
      * 在Android平台上，负责传入ANativeWindow 对象，用于界面显示
+     * 传入当前的Surface之前会做一次清理动作，清理的内容包括EGL和shader的清理
      * @param window
      */
     virtual void InitView(void *window);

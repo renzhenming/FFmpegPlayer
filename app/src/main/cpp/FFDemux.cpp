@@ -140,8 +140,17 @@ bool FFDemux::Open(const char *url) {
     //打开视频文件
     XLOGI("begin open file %s", url);
 
-    //avformat_close_input何时调用？
-    int result = avformat_open_input(&avFormatContext, url, 0, 0);
+    //配置参数
+    AVDictionary *opts = NULL;
+    char key[] = "max_delay";
+    char val[] = "500";
+    av_dict_set(&opts, key, val, 0);
+
+    char key2[] = "rtsp_transport";
+    char val2[] = "tcp";
+   	av_dict_set(&opts, key2, val2, 0);
+
+    int result = avformat_open_input(&avFormatContext, url, 0, &opts);
     if (result != 0) {
         mutex.unlock();
         char buf[1024] = {0};

@@ -20,15 +20,14 @@
  */
 static const char *vertexShader = GET_STR(
 
-//attribute 可以看做顶点着色器的输入
-//varying就是顶点着色器的输出
+        //attribute 可以看做顶点着色器的输入
+        //varying就是顶点着色器的输出
 
-//顶点坐标，定义输入顶点矩阵
-        attribute
-        vec4 aPosition;
+        //定点着色器被调用的时候，在aPosition（有的书中写作a_Position）
+        //中接收当前顶点的位置
+        attribute vec4 aPosition;
         //材质顶点坐标，定义输入顶点属性 颜色
-        attribute
-        vec2 aTexCoord;
+        attribute vec2 aTexCoord;
 
         //输出的材质坐标
         //定点着色器的输出叫做varying变量
@@ -38,32 +37,31 @@ static const char *vertexShader = GET_STR(
         void main() {
             vTexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);
 
-            //编译时，gl_Position被编译器自动定义，读入顶点矩阵aPosition
-            //输出到gl_Position上，（通常会有一系列的矩阵变换），这里直接赋值
+            //main方法执行时，会把上边定义的定点位置复制到输出变量gl_Position
+            //OPenGL会把gl_Position中存储的值当作顶点的最终位置
+            //gl_Position：把他当作shader的关键字 不可改变写法
             gl_Position = aPosition;
         }
 );
 
 /**
  * 片元着色器（也叫片段着色器）,软解码和部分x86硬解码
- * 片段着色器也能丢弃片段或者产生一些颜色值像gl_FragColor，光栅化阶段产生的颜色、深度、模板、屏幕坐标（Xw，Yw）
- * 变成OpenGL ES 2.0管线输入
- *
+ * 通常一个片段可以看作屏幕上的一个像素，但并不总是准确，在一些超高分辨率的
+ * 的设备上可能需要使用较大的片段
+ * 片段着色器的目的就是告诉GPU每个片段的颜色应该是什么
  */
 static const char *fragYUV420P = GET_STR(
-//精度,设置显示质量
-        precision
-        mediump float;
+        //精度,设置显示质量（lowp mudiump highp）
+        //顶点着色器也有精度，默认值是highp,因为定点位置精确度很重要
+        //对于片段着色器，出于兼容性考虑，使用mediump,因为紧度越高，
+        //对性能影响越大，这是基于速度和质量的权衡
+        precision mediump float;
         //顶点着色器传递的坐标
-        varying
-        vec2 vTexCoord;
+        varying vec2 vTexCoord;
         //输入的材质，Uniforms-常量数据
-        uniform
-        sampler2D yTexture;
-        uniform
-        sampler2D uTexture;
-        uniform
-        sampler2D vTexture;
+        uniform sampler2D yTexture;
+        uniform sampler2D uTexture;
+        uniform sampler2D vTexture;
 
         void main() {
             vec3 yuv;
@@ -78,7 +76,9 @@ static const char *fragYUV420P = GET_STR(
                     1.13983, -0.58060, 0.0
             ) * yuv;
 
-            //输出像素颜色
+            //将uniform中定义的颜色复制到特殊的输出变量gl_FragColor，OpenGL
+            //会把这个颜色作为当前片段的最终颜色
+            //gl_FragColor：把他当作shader的关键字，不可改变写法
             gl_FragColor = vec4(rgb, 1.0);
         }
 
@@ -264,13 +264,13 @@ bool XShader::Init(XShaderType type) {
     glUseProgram(program);
     XLOGI("glLinkProgram success!");
 
-    //加入三维顶点数据 两个三角形组成正方形(数组元素的顺序无影响)
+    //加入三维顶点数据 两个三角形组成正方形
+    //关于定点的顺序，使用逆时针顺序排列成为卷曲顺序，
+    //因为在任何地方都是用这种卷曲顺序，可以优化性能：
+    //使用卷曲顺序可以指出一个三角形属于任何给定物体的
+    //前面或者后面,OpenGL可以忽略那些无论如何都无法被看到
+    //的三角形
     static float vers[] = {
-            /*1.0f,-1.0f,0.0f,
-            -1.0f,-1.0f,0.0f,
-            -1.0f,1.0f,0.0f,
-            1.0f,1.0f,0.0f,*/
-
             1.0f, -1.0f, 0.0f,
             -1.0f, -1.0f, 0.0f,
             1.0f, 1.0f, 0.0f,
@@ -284,10 +284,6 @@ bool XShader::Init(XShaderType type) {
 
     //加入材质坐标数据
     static float txts[]{
-            /*1.0f,0.0f,
-            0.0f,0.0f,
-            0.0f,1.0f,
-            1.0f,1.0f*/
             1.0f, 0.0f, //右下
             0.0f, 0.0f,
             1.0f, 1.0f,

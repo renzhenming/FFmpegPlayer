@@ -20,6 +20,7 @@
 class CXEGL : public XEGL {
 public:
 
+    //EGLDisplay封装系统物理屏幕的数据类型
     EGLDisplay display = EGL_NO_DISPLAY;
     EGLContext context = EGL_NO_CONTEXT;
     EGLSurface surface = EGL_NO_SURFACE;
@@ -34,10 +35,11 @@ public:
 
         eglMakeCurrent(display,EGL_NO_SURFACE,EGL_NO_SURFACE,EGL_NO_CONTEXT);
 
+        //先销毁显示设备
         if(surface != EGL_NO_SURFACE){
             eglDestroySurface(display,surface);
         }
-
+        //再销毁上下文
         if(context != EGL_NO_CONTEXT){
             eglDestroyContext(display,context);
         }
@@ -84,13 +86,14 @@ public:
         }
         XLOGI("eglInitialize success");
 
-        //选择Config eglChooseConfig
+        //选择Config eglChooseConfig,经过测试，这个属性数组不添加没有影响，原因未知
         EGLint configAttrList[]{
+                EGL_ALPHA_SIZE,8,
                 EGL_RED_SIZE, 8,
                 EGL_GREEN_SIZE, 8,
                 EGL_BLUE_SIZE, 8,
-                EGL_SURFACE_TYPE,
-                EGL_WINDOW_BIT,
+                EGL_RENDERABLE_TYPE,EGL_OPENGL_ES2_BIT,
+                EGL_SURFACE_TYPE,EGL_WINDOW_BIT,
                 EGL_NONE
         };
         EGLConfig config = 0;
@@ -102,18 +105,10 @@ public:
         }
         XLOGI("eglChooseConfig success");
 
-        //创建Surface eglCreateWindowSurface /*EGL_NONE: Attrib list terminator */
-        surface = eglCreateWindowSurface(display, config, window, NULL);
-        if (surface == EGL_NO_SURFACE) {
-            mutex.unlock();
-            XLOGE("eglCreateWindowSurface failed!%d",eglGetError());
-            return false;
-        }
-        XLOGI("eglCreateWindowSurface success!");
-
-
         //创建Context eglCreateContext
         const EGLint contextAttrList[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
+        //第三个参数可以传入一个EGLContext类型的变量，表示可以与正在创建的上下文环境共享OpenGL资源，
+        //包括纹理id frameBuffer 以及其他的buffer资源，这里填NULL代表不需要与其他上下文共享资源
         context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttrList);
         if (context == EGL_NO_CONTEXT) {
             mutex.unlock();
@@ -122,7 +117,17 @@ public:
         }
         XLOGI("eglCreateContext success!");
 
-        //绑定Context eglMakeCurrent
+        //创建Surface eglCreateWindowSurface /*EGL_NONE: Attrib list terminator */
+        //EGLSurface可以将EGL和设备的屏幕连接起来
+        surface = eglCreateWindowSurface(display, config, window, NULL);
+        if (surface == EGL_NO_SURFACE) {
+            mutex.unlock();
+            XLOGE("eglCreateWindowSurface failed!%d",eglGetError());
+            return false;
+        }
+        XLOGI("eglCreateWindowSurface success!");
+
+        //为渲染线程绑定设备和上下文环境
         if (EGL_TRUE != eglMakeCurrent(display, surface, surface, context)) {
             mutex.unlock();
             XLOGE("eglMakeCurrent failed!");
@@ -139,6 +144,9 @@ public:
             mutex.unlock();
             return;
         }
+        //egl工作模式是双缓冲模式，内部有两个FrameBuffer缓冲区，当其中一个FrameBuffer显示在
+        //屏幕上的时候，另一个在后台等待，调用eglSwapBuffers是将前台和后台的FrameBuffer交换
+        //这样就可以看到渲染输出的结果了
         eglSwapBuffers(display, surface);
         mutex.unlock();
     }

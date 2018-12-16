@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements Runnable {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
         //屏幕为横屏
-        setRequestedOrientation( ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE );
+        //setRequestedOrientation( ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE );
 
 
         setContentView( R.layout.activity_main );

@@ -987,6 +987,7 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance,
     //设置放大滤镜
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     //glTexImage2D函数将Pixels数组中的像素值传给当前绑定的纹理对象，于是便创建了纹理，Pixels是最后一个参数
+    //该函数的功能是，根据指定的参数，生成一个2D纹理（Texture）
     glTexImage2D(
             //纹理的类型
             GL_TEXTURE_2D,
@@ -1103,8 +1104,23 @@ Java_com_rzm_ffmpegplayer_FFmpegPlayer_initOpenGL(JNIEnv *env, jobject instance,
 
         //激活第1层纹理,绑定到创建的opengl纹理
         glActiveTexture(GL_TEXTURE0);
+        //glBindTexture可以让你创建或使用一个已命名的纹理，调用glBindTexture方法，将target设置为GL_TEXTURE_1D、
+        // GL_TEXTURE_2D、GL_TEXTURE_3D或者GL_TEXTURE_CUBE_MAP，并将texture设置为你想要绑定的新纹理的名称，
+        // 即可将纹理名绑定至当前活动纹理单元目标，当一个纹理与目标绑定时，该目标之前的绑定关系将自动被打破
         glBindTexture(GL_TEXTURE_2D, texts[0]);
-        //替换纹理内容
+        //替换纹理内容，将data指针（buf[0]）指向的图片的部分作为2D纹理，在程序中只要不断改变data指向的图片就能自动更新纹理
+        /**
+         *
+			功能：提供修改图像的功能,因为修改一个纹理比重新创建一个纹理开销小很多,对于一些视频捕捉程序可以先将视频图像存储在更大的初始图像中
+			(图像大小要是2^n,opengl2.0后没有这个限制),创建一个渲染用的纹理,然后反复调用glTexSubImage2D(修改的图像区域不用是2^n)函数从视频图像区域读取到渲染
+			纹理图像中,渲染用的纹理图像只需要创建一次即可。
+			函数原型 glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels)
+			target:必须是glCopyTexImage2D中对应的target可用值
+			level:mipmap等级
+			xoffset,yoffset是要修改的图像左上角偏移,width,height是要修改的图像宽高像素修改的范围在原图之外并不受影响
+			format,type:表示图像的数据格式和类型
+			pixels:子图像的纹理数据
+         */
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE,
                         buf[0]);
 
